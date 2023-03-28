@@ -3,7 +3,7 @@
 		"location": "src"
 	},
 	"tasks": {
-		"default": {
+		"dist": {
 			"location": "dist",
 			"output": ".",
 			"execute": {
@@ -18,6 +18,24 @@
 					"action": "minifyJS",
 					"sourceMap": "linked",
 					"bundle": {}
+				}
+			}
+		},
+		"module": {
+			"location": "module",
+			"output": ".",
+			"execute": {
+				"copy": {
+					"action": "copy",
+					"location": "../src",
+					"excludes": ["/index.html", "/index.js"]
+				},
+				"minifyJS": {
+					"action": "minifyJS",
+					"bundle": {
+						"format": "esm",
+						"minify": false
+					}
 				}
 			}
 		}

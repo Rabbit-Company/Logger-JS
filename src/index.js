@@ -32,3 +32,8 @@ document.getElementById('btn-debug').addEventListener('click', () => {
 	let message = document.getElementById('text').value;
 	Logger.debug(message);
 });
+
+document.getElementById('btn-silly').addEventListener('click', () => {
+	let message = document.getElementById('text').value;
+	Logger.silly(message);
+});

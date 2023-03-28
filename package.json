@@ -1,8 +1,8 @@
 {
 	"name": "@rabbit-company/logger",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"description": "Simple logger",
-	"main": "./src/logger.js",
+	"main": "./module/logger.js",
 	"type": "module",
 	"homepage": "https://github.com/Rabbit-Company/Logger-JS",
 	"funding": "https://rabbit-company.com/donation",
@@ -13,7 +13,7 @@
 		"build": "rabbit-builder"
 	},
 	"files": [
-		"src/logger.js"
+		"module/logger.js"
 	],
 	"repository": {
 		"type": "git",
@@ -31,5 +31,8 @@
 	],
 	"devDependencies": {
 		"@rabbit-company/rabbit-builder": "^1.0.5"
+	},
+	"dependencies": {
+		"chalk": "^5.2.0"
 	}
 }

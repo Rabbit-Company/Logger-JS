@@ -1,11 +1,12 @@
+import chalk from 'chalk';
+
 export default class Logger{
 
 	static #NDJson = '';
 	static NDJson = false;
-	static #isBrowser = typeof(window) === 'object';
 
 	static level = 2;
-	static colors = false;
+	static colors = true;
 
 	static levels = {
 		error: 0,
@@ -34,7 +35,45 @@ export default class Logger{
 	}
 
 	static formatMessage(message, logLevel){
-		return `[${new Date().toISOString().split('.')[0].replace('T', ' ')}] ${this.#levels[logLevel]} ${message}`;
+		let type = this.#levels[logLevel];
+		let date = new Date().toISOString().split('.')[0].replace('T', ' ');
+
+		if(this.colors){
+			date = chalk.gray(date);
+
+			switch(logLevel){
+				case 0:
+					type = chalk.bold(chalk.red(type));
+					message = chalk.red(message);
+				break;
+				case 1:
+					type = chalk.bold(chalk.yellow(type));
+					message = chalk.yellow(message);
+				break;
+				case 2:
+					type = chalk.bold(chalk.cyan(type));
+					message = chalk.cyan(message);
+				break;
+				case 3:
+					type = chalk.bold(chalk.blue(type));
+					message = chalk.blue(message);
+				break;
+				case 4:
+					type = chalk.bold(chalk.blue(type));
+					message = chalk.blue(message);
+				break;
+				case 5:
+					type = chalk.bold(chalk.gray(type));
+					message = chalk.gray(message);
+				break;
+				case 6:
+					type = chalk.bold(chalk.gray(type));
+					message = chalk.gray(message);
+				break;
+			}
+		}
+
+		return `[${date}] ${type} ${message}`;
 	}
 
 	static #processMessage(message, level){
