@@ -1,0 +1,35 @@
+{
+	"name": "@rabbit-company/logger",
+	"version": "1.0.0",
+	"description": "Simple logger",
+	"main": "./src/logger.js",
+	"type": "module",
+	"homepage": "https://github.com/Rabbit-Company/Logger-JS",
+	"funding": "https://rabbit-company.com/donation",
+	"author": "Rabbit Company <info@rabbit-company.com>",
+	"license": "MIT",
+	"private": false,
+	"scripts": {
+		"build": "rabbit-builder"
+	},
+	"files": [
+		"src/logger.js"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Rabbit-Company/Logger-JS.git"
+	},
+	"contributors": [
+		"Rabbit Company <info@rabbit-company.com> (https://github.com/Rabbit-Company)"
+	],
+	"bugs": {
+		"url": "https://github.com/Rabbit-Company/Logger-JS/issues",
+		"email": "info@rabbit-company.com"
+	},
+	"keywords": [
+		"logger"
+	],
+	"devDependencies": {
+		"@rabbit-company/rabbit-builder": "^1.0.5"
+	}
+}
