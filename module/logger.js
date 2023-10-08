@@ -418,6 +418,11 @@ var source_default = chalk;
 // module/logger.js
 var _NDJson, _levels, _processMessage, processMessage_fn;
 var Logger = class {
+  /**
+   * Parses the log message to ensure it is a string.
+   * @param {*} message - The log message.
+   * @returns {string | null} - The parsed log message or null if the message is undefined.
+   */
   static parseMessage(message) {
     if (typeof message === "undefined")
       return null;
@@ -425,6 +430,12 @@ var Logger = class {
       message = JSON.stringify(message);
     return message;
   }
+  /**
+   * Formats the log message with timestamp and log level.
+   * @param {string} message - The log message.
+   * @param {number} logLevel - The log level.
+   * @returns {string} - The formatted log message.
+   */
   static formatMessage(message, logLevel) {
     let type = __privateGet(this, _levels)[logLevel];
     let date = (/* @__PURE__ */ new Date()).toISOString().split(".")[0].replace("T", " ");
@@ -463,31 +474,68 @@ var Logger = class {
     }
     return `[${date}] ${type} ${message}`;
   }
+  /**
+   * Logs an error message.
+   * @param {*} message - The error message.
+   */
   static error(message) {
     __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 0);
   }
+  /**
+   * Logs a warning message.
+   * @param {*} message - The warning message.
+   */
   static warn(message) {
     __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 1);
   }
+  /**
+   * Logs an informational message.
+   * @param {*} message - The informational message.
+   */
   static info(message) {
     __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 2);
   }
+  /**
+   * Logs an HTTP-related message.
+   * @param {*} message - The HTTP-related message.
+   */
   static http(message) {
     __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 3);
   }
+  /**
+   * Logs a verbose message.
+   * @param {*} message - The verbose message.
+   */
   static verbose(message) {
     __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 4);
   }
+  /**
+   * Logs a debug message.
+   * @param {*} message - The debug message.
+   */
   static debug(message) {
     __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 5);
   }
+  /**
+   * Logs a silly message.
+   * @param {*} message - The silly message.
+   */
   static silly(message) {
     __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 6);
   }
+  /**
+   * Appends a message to NDJson format.
+   * @param {string} message - The message to append.
+   * @param {number} logLevel - The log level associated with the message.
+   */
   static putNDJson(message, logLevel) {
     let separator = __privateGet(this, _NDJson).length !== 0 ? "\n" : "";
     __privateSet(this, _NDJson, __privateGet(this, _NDJson) + (separator + JSON.stringify({ "time": (/* @__PURE__ */ new Date()).toISOString(), "level": logLevel, "msg": message })));
   }
+  /**
+   * Gets the NDJson log.
+   * @returns {string} - The NDJson log.
+   */
   static getNDJson() {
     return __privateGet(this, _NDJson);
   }
@@ -515,11 +563,32 @@ processMessage_fn = function(message, level2) {
       break;
   }
 };
+/**
+ * Processes and logs a message with the specified log level.
+ * @param {*} message - The log message.
+ * @param {number} level - The log level.
+ */
 __privateAdd(Logger, _processMessage);
 __privateAdd(Logger, _NDJson, "");
+/**
+ * Indicates whether NDJson is enabled.
+ * @type {boolean}
+ */
 __publicField(Logger, "NDJson", false);
+/**
+ * The log level of the logger.
+ * @type {number}
+ */
 __publicField(Logger, "level", 2);
+/**
+ * Indicates whether colors are enabled for log messages.
+ * @type {boolean}
+ */
 __publicField(Logger, "colors", true);
+/**
+ * Defines log levels and their associated numeric values.
+ * @type {Object}
+ */
 __publicField(Logger, "levels", {
   error: 0,
   warn: 1,
