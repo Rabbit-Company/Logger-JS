@@ -1,6 +1,6 @@
 {
 	"name": "@rabbit-company/logger",
-	"version": "2.1.0",
+	"version": "2.1.1",
 	"description": "Simple logger",
 	"main": "./src/logger.js",
 	"browser": "./module/logger.js",
@@ -15,7 +15,9 @@
 	},
 	"files": [
 		"module/logger.js",
-		"src/logger.js"
+		"module/logger.d.ts",
+		"src/logger.js",
+		"src/logger.d.ts"
 	],
 	"repository": {
 		"type": "git",
