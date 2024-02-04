@@ -1,103 +1,6 @@
-var __defProp = Object.defineProperty;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __publicField = (obj, key, value) => {
-  __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-  return value;
-};
-var __accessCheck = (obj, member, msg) => {
-  if (!member.has(obj))
-    throw TypeError("Cannot " + msg);
-};
-var __privateGet = (obj, member, getter) => {
-  __accessCheck(obj, member, "read from private field");
-  return getter ? getter.call(obj) : member.get(obj);
-};
-var __privateAdd = (obj, member, value) => {
-  if (member.has(obj))
-    throw TypeError("Cannot add the same private member more than once");
-  member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
-};
-var __privateSet = (obj, member, value, setter) => {
-  __accessCheck(obj, member, "write to private field");
-  setter ? setter.call(obj, value) : member.set(obj, value);
-  return value;
-};
-var __privateMethod = (obj, member, method) => {
-  __accessCheck(obj, member, "access private method");
-  return method;
-};
-
 // node_modules/chalk/source/vendor/ansi-styles/index.js
-var ANSI_BACKGROUND_OFFSET = 10;
-var wrapAnsi16 = (offset = 0) => (code) => `\x1B[${code + offset}m`;
-var wrapAnsi256 = (offset = 0) => (code) => `\x1B[${38 + offset};5;${code}m`;
-var wrapAnsi16m = (offset = 0) => (red, green, blue) => `\x1B[${38 + offset};2;${red};${green};${blue}m`;
-var styles = {
-  modifier: {
-    reset: [0, 0],
-    // 21 isn't widely supported and 22 does the same thing
-    bold: [1, 22],
-    dim: [2, 22],
-    italic: [3, 23],
-    underline: [4, 24],
-    overline: [53, 55],
-    inverse: [7, 27],
-    hidden: [8, 28],
-    strikethrough: [9, 29]
-  },
-  color: {
-    black: [30, 39],
-    red: [31, 39],
-    green: [32, 39],
-    yellow: [33, 39],
-    blue: [34, 39],
-    magenta: [35, 39],
-    cyan: [36, 39],
-    white: [37, 39],
-    // Bright color
-    blackBright: [90, 39],
-    gray: [90, 39],
-    // Alias of `blackBright`
-    grey: [90, 39],
-    // Alias of `blackBright`
-    redBright: [91, 39],
-    greenBright: [92, 39],
-    yellowBright: [93, 39],
-    blueBright: [94, 39],
-    magentaBright: [95, 39],
-    cyanBright: [96, 39],
-    whiteBright: [97, 39]
-  },
-  bgColor: {
-    bgBlack: [40, 49],
-    bgRed: [41, 49],
-    bgGreen: [42, 49],
-    bgYellow: [43, 49],
-    bgBlue: [44, 49],
-    bgMagenta: [45, 49],
-    bgCyan: [46, 49],
-    bgWhite: [47, 49],
-    // Bright color
-    bgBlackBright: [100, 49],
-    bgGray: [100, 49],
-    // Alias of `bgBlackBright`
-    bgGrey: [100, 49],
-    // Alias of `bgBlackBright`
-    bgRedBright: [101, 49],
-    bgGreenBright: [102, 49],
-    bgYellowBright: [103, 49],
-    bgBlueBright: [104, 49],
-    bgMagentaBright: [105, 49],
-    bgCyanBright: [106, 49],
-    bgWhiteBright: [107, 49]
-  }
-};
-var modifierNames = Object.keys(styles.modifier);
-var foregroundColorNames = Object.keys(styles.color);
-var backgroundColorNames = Object.keys(styles.bgColor);
-var colorNames = [...foregroundColorNames, ...backgroundColorNames];
-function assembleStyles() {
-  const codes = /* @__PURE__ */ new Map();
+var assembleStyles = function() {
+  const codes = new Map;
   for (const [groupName, group] of Object.entries(styles)) {
     for (const [styleName, style] of Object.entries(group)) {
       styles[styleName] = {
@@ -152,11 +55,9 @@ function assembleStyles() {
         }
         const integer = Number.parseInt(colorString, 16);
         return [
-          /* eslint-disable no-bitwise */
           integer >> 16 & 255,
           integer >> 8 & 255,
           integer & 255
-          /* eslint-enable no-bitwise */
         ];
       },
       enumerable: false
@@ -209,7 +110,68 @@ function assembleStyles() {
     }
   });
   return styles;
-}
+};
+var ANSI_BACKGROUND_OFFSET = 10;
+var wrapAnsi16 = (offset = 0) => (code) => `\x1B[${code + offset}m`;
+var wrapAnsi256 = (offset = 0) => (code) => `\x1B[${38 + offset};5;${code}m`;
+var wrapAnsi16m = (offset = 0) => (red, green, blue) => `\x1B[${38 + offset};2;${red};${green};${blue}m`;
+var styles = {
+  modifier: {
+    reset: [0, 0],
+    bold: [1, 22],
+    dim: [2, 22],
+    italic: [3, 23],
+    underline: [4, 24],
+    overline: [53, 55],
+    inverse: [7, 27],
+    hidden: [8, 28],
+    strikethrough: [9, 29]
+  },
+  color: {
+    black: [30, 39],
+    red: [31, 39],
+    green: [32, 39],
+    yellow: [33, 39],
+    blue: [34, 39],
+    magenta: [35, 39],
+    cyan: [36, 39],
+    white: [37, 39],
+    blackBright: [90, 39],
+    gray: [90, 39],
+    grey: [90, 39],
+    redBright: [91, 39],
+    greenBright: [92, 39],
+    yellowBright: [93, 39],
+    blueBright: [94, 39],
+    magentaBright: [95, 39],
+    cyanBright: [96, 39],
+    whiteBright: [97, 39]
+  },
+  bgColor: {
+    bgBlack: [40, 49],
+    bgRed: [41, 49],
+    bgGreen: [42, 49],
+    bgYellow: [43, 49],
+    bgBlue: [44, 49],
+    bgMagenta: [45, 49],
+    bgCyan: [46, 49],
+    bgWhite: [47, 49],
+    bgBlackBright: [100, 49],
+    bgGray: [100, 49],
+    bgGrey: [100, 49],
+    bgRedBright: [101, 49],
+    bgGreenBright: [102, 49],
+    bgYellowBright: [103, 49],
+    bgBlueBright: [104, 49],
+    bgMagentaBright: [105, 49],
+    bgCyanBright: [106, 49],
+    bgWhiteBright: [107, 49]
+  }
+};
+var modifierNames = Object.keys(styles.modifier);
+var foregroundColorNames = Object.keys(styles.color);
+var backgroundColorNames = Object.keys(styles.bgColor);
+var colorNames = [...foregroundColorNames, ...backgroundColorNames];
 var ansiStyles = assembleStyles();
 var ansi_styles_default = ansiStyles;
 
@@ -269,6 +231,9 @@ function stringEncaseCRLFWithFirstIndex(string, prefix, postfix, index) {
 }
 
 // node_modules/chalk/source/index.js
+var createChalk = function(options) {
+  return chalkFactory(options);
+};
 var { stdout: stdoutColor, stderr: stderrColor } = browser_default;
 var GENERATOR = Symbol("GENERATOR");
 var STYLER = Symbol("STYLER");
@@ -279,23 +244,20 @@ var levelMapping = [
   "ansi256",
   "ansi16m"
 ];
-var styles2 = /* @__PURE__ */ Object.create(null);
+var styles2 = Object.create(null);
 var applyOptions = (object, options = {}) => {
   if (options.level && !(Number.isInteger(options.level) && options.level >= 0 && options.level <= 3)) {
     throw new Error("The `level` option should be an integer from 0 to 3");
   }
   const colorLevel = stdoutColor ? stdoutColor.level : 0;
-  object.level = options.level === void 0 ? colorLevel : options.level;
+  object.level = options.level === undefined ? colorLevel : options.level;
 };
 var chalkFactory = (options) => {
-  const chalk2 = (...strings) => strings.join(" ");
-  applyOptions(chalk2, options);
-  Object.setPrototypeOf(chalk2, createChalk.prototype);
-  return chalk2;
+  const chalk = (...strings) => strings.join(" ");
+  applyOptions(chalk, options);
+  Object.setPrototypeOf(chalk, createChalk.prototype);
+  return chalk;
 };
-function createChalk(options) {
-  return chalkFactory(options);
-}
 Object.setPrototypeOf(createChalk.prototype, Function.prototype);
 for (const [styleName, style] of Object.entries(ansi_styles_default)) {
   styles2[styleName] = {
@@ -366,7 +328,7 @@ var proto = Object.defineProperties(() => {
 var createStyler = (open, close, parent) => {
   let openAll;
   let closeAll;
-  if (parent === void 0) {
+  if (parent === undefined) {
     openAll = open;
     closeAll = close;
   } else {
@@ -394,12 +356,12 @@ var applyStyle = (self, string) => {
     return self[IS_EMPTY] ? "" : string;
   }
   let styler = self[STYLER];
-  if (styler === void 0) {
+  if (styler === undefined) {
     return string;
   }
   const { openAll, closeAll } = styler;
   if (string.includes("\x1B")) {
-    while (styler !== void 0) {
+    while (styler !== undefined) {
       string = stringReplaceAll(string, styler.close, styler.open);
       styler = styler.parent;
     }
@@ -415,14 +377,30 @@ var chalk = createChalk();
 var chalkStderr = createChalk({ level: stderrColor ? stderrColor.level : 0 });
 var source_default = chalk;
 
-// module/logger.js
-var _NDJson, _levels, _processMessage, processMessage_fn;
-var Logger = class {
-  /**
-   * Parses the log message to ensure it is a string.
-   * @param {*} message - The log message.
-   * @returns {string | null} - The parsed log message or null if the message is undefined.
-   */
+// src/logger.ts
+class Logger {
+  static NDJsonData = "";
+  static NDJson = false;
+  static level = 2;
+  static colors = true;
+  static levels = {
+    error: 0,
+    warn: 1,
+    info: 2,
+    http: 3,
+    verbose: 4,
+    debug: 5,
+    silly: 6
+  };
+  static levelsRev = {
+    0: "ERROR",
+    1: "WARN",
+    2: "INFO",
+    3: "HTTP",
+    4: "VERBOSE",
+    5: "DEBUG",
+    6: "SILLY"
+  };
   static parseMessage(message) {
     if (typeof message === "undefined")
       return null;
@@ -430,15 +408,9 @@ var Logger = class {
       message = JSON.stringify(message);
     return message;
   }
-  /**
-   * Formats the log message with timestamp and log level.
-   * @param {string} message - The log message.
-   * @param {number} logLevel - The log level.
-   * @returns {string} - The formatted log message.
-   */
   static formatMessage(message, logLevel) {
-    let type = __privateGet(this, _levels)[logLevel];
-    let date = (/* @__PURE__ */ new Date()).toISOString().split(".")[0].replace("T", " ");
+    let type = this.levelsRev[logLevel];
+    let date = new Date().toISOString().split(".")[0].replace("T", " ");
     if (this.colors) {
       date = source_default.gray(date);
       switch (logLevel) {
@@ -474,139 +446,55 @@ var Logger = class {
     }
     return `[${date}] ${type} ${message}`;
   }
-  /**
-   * Logs an error message.
-   * @param {*} message - The error message.
-   */
+  static processMessage(message, logLevel) {
+    if (this.level < logLevel)
+      return;
+    message = this.parseMessage(message);
+    if (message === null)
+      return;
+    if (this.NDJson)
+      this.putNDJson(message, logLevel);
+    switch (logLevel) {
+      case 0:
+        console.error(this.formatMessage(message, logLevel));
+        break;
+      case 1:
+        console.warn(this.formatMessage(message, logLevel));
+        break;
+      default:
+        console.info(this.formatMessage(message, logLevel));
+        break;
+    }
+  }
   static error(message) {
-    __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 0);
+    this.processMessage(message, 0);
   }
-  /**
-   * Logs a warning message.
-   * @param {*} message - The warning message.
-   */
   static warn(message) {
-    __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 1);
+    this.processMessage(message, 1);
   }
-  /**
-   * Logs an informational message.
-   * @param {*} message - The informational message.
-   */
   static info(message) {
-    __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 2);
+    this.processMessage(message, 2);
   }
-  /**
-   * Logs an HTTP-related message.
-   * @param {*} message - The HTTP-related message.
-   */
   static http(message) {
-    __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 3);
+    this.processMessage(message, 3);
   }
-  /**
-   * Logs a verbose message.
-   * @param {*} message - The verbose message.
-   */
   static verbose(message) {
-    __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 4);
+    this.processMessage(message, 4);
   }
-  /**
-   * Logs a debug message.
-   * @param {*} message - The debug message.
-   */
   static debug(message) {
-    __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 5);
+    this.processMessage(message, 5);
   }
-  /**
-   * Logs a silly message.
-   * @param {*} message - The silly message.
-   */
   static silly(message) {
-    __privateMethod(this, _processMessage, processMessage_fn).call(this, message, 6);
+    this.processMessage(message, 6);
   }
-  /**
-   * Appends a message to NDJson format.
-   * @param {string} message - The message to append.
-   * @param {number} logLevel - The log level associated with the message.
-   */
   static putNDJson(message, logLevel) {
-    let separator = __privateGet(this, _NDJson).length !== 0 ? "\n" : "";
-    __privateSet(this, _NDJson, __privateGet(this, _NDJson) + (separator + JSON.stringify({ "time": (/* @__PURE__ */ new Date()).toISOString(), "level": logLevel, "msg": message })));
+    let separator = this.NDJsonData.length !== 0 ? "\n" : "";
+    this.NDJsonData += separator + JSON.stringify({ time: new Date().toISOString(), level: logLevel, msg: message });
   }
-  /**
-   * Gets the NDJson log.
-   * @returns {string} - The NDJson log.
-   */
   static getNDJson() {
-    return __privateGet(this, _NDJson);
+    return this.NDJsonData ?? "";
   }
-};
-_NDJson = new WeakMap();
-_levels = new WeakMap();
-_processMessage = new WeakSet();
-processMessage_fn = function(message, level2) {
-  if (this.level < level2)
-    return;
-  message = this.parseMessage(message);
-  if (message === null)
-    return;
-  if (this.NDJson)
-    this.putNDJson(message, level2);
-  switch (level2) {
-    case 0:
-      console.error(this.formatMessage(message, level2));
-      break;
-    case 1:
-      console.warn(this.formatMessage(message, level2));
-      break;
-    default:
-      console.info(this.formatMessage(message, level2));
-      break;
-  }
-};
-/**
- * Processes and logs a message with the specified log level.
- * @param {*} message - The log message.
- * @param {number} level - The log level.
- */
-__privateAdd(Logger, _processMessage);
-__privateAdd(Logger, _NDJson, "");
-/**
- * Indicates whether NDJson is enabled.
- * @type {boolean}
- */
-__publicField(Logger, "NDJson", false);
-/**
- * The log level of the logger.
- * @type {number}
- */
-__publicField(Logger, "level", 2);
-/**
- * Indicates whether colors are enabled for log messages.
- * @type {boolean}
- */
-__publicField(Logger, "colors", true);
-/**
- * Defines log levels and their associated numeric values.
- * @type {Object}
- */
-__publicField(Logger, "levels", {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  verbose: 4,
-  debug: 5,
-  silly: 6
-});
-__privateAdd(Logger, _levels, {
-  0: "ERROR",
-  1: "WARN",
-  2: "INFO",
-  3: "HTTP",
-  4: "VERBOSE",
-  5: "DEBUG",
-  6: "SILLY"
-});
+}
 export {
   Logger as default
 };

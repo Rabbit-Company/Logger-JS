@@ -1,8 +1,8 @@
 {
 	"name": "@rabbit-company/logger",
-	"version": "2.1.1",
+	"version": "3.0.0",
 	"description": "Simple logger",
-	"main": "./src/logger.js",
+	"main": "./module/logger.js",
 	"browser": "./module/logger.js",
 	"type": "module",
 	"homepage": "https://github.com/Rabbit-Company/Logger-JS",
@@ -11,13 +11,11 @@
 	"license": "MIT",
 	"private": false,
 	"scripts": {
-		"build": "rabbit-builder"
+		"build": "bun run build.ts"
 	},
 	"files": [
 		"module/logger.js",
-		"module/logger.d.ts",
-		"src/logger.js",
-		"src/logger.d.ts"
+		"module/logger.d.ts"
 	],
 	"repository": {
 		"type": "git",
@@ -33,10 +31,13 @@
 	"keywords": [
 		"logger"
 	],
-	"devDependencies": {
-		"@rabbit-company/rabbit-builder": "^1.0.5"
-	},
-	"dependencies": {
+  "devDependencies": {
+    "@types/bun": "latest",
+    "bun-plugin-dts": "^0.2.1",
+		"@rabbit-company/logger": "^2.1.1",
 		"chalk": "^5.3.0"
-	}
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
 }
