@@ -45,43 +45,68 @@ export declare const enum Colors {
  *
  * The levels are ordered from most important (ERROR) to least important (SILLY).
  * When setting a log level, only messages of that level or higher will be emitted.
+ *
+ * @example
+ * // Set logger to display DEBUG level and above
+ * logger.setLevel(Levels.DEBUG);
  */
 export declare enum Levels {
 	/**
 	 * Error level. Indicates critical issues that require immediate attention.
 	 * Use for unrecoverable errors that prevent normal operation.
+	 * @example
+	 * logger.error("Database connection failed");
 	 */
 	ERROR = 0,
 	/**
 	 * Warning level. Indicates potential issues or noteworthy conditions.
 	 * Use for recoverable issues that don't prevent normal operation.
+	 * @example
+	 * logger.warn("High memory usage detected");
 	 */
 	WARN = 1,
 	/**
+	 * Audit level. For security-sensitive operations and compliance logging.
+	 * Use for tracking authentication, authorization, and sensitive data access.
+	 * @example
+	 * logger.audit("User permissions changed", { user: "admin", changes: [...] });
+	 */
+	AUDIT = 2,
+	/**
 	 * Informational level. Provides general information about the application's state.
 	 * Use for normal operational messages that highlight progress.
+	 * @example
+	 * logger.info("Application started on port 3000");
 	 */
-	INFO = 2,
+	INFO = 3,
 	/**
 	 * HTTP-related level. Logs HTTP requests and responses.
 	 * Use for tracking HTTP API calls and their status.
+	 * @example
+	 * logger.http("GET /api/users 200 45ms");
 	 */
-	HTTP = 3,
-	/**
-	 * Verbose level. Provides detailed information for in-depth analysis.
-	 * Use for detailed operational logs that are typically only needed during debugging.
-	 */
-	VERBOSE = 4,
+	HTTP = 4,
 	/**
 	 * Debug level. Provides detailed context for debugging purposes.
 	 * Use for extended debugging information during development.
+	 * @example
+	 * logger.debug("Database query", { query: "...", duration: "120ms" });
 	 */
 	DEBUG = 5,
 	/**
+	 * Verbose level. Provides detailed information for in-depth analysis.
+	 * Use for detailed operational logs that are typically only needed during debugging.
+	 * @example
+	 * logger.verbose("Cache update cycle completed", { entries: 1423 });
+	 */
+	VERBOSE = 6,
+	/**
 	 * Silly level. Logs very low-level messages.
 	 * Use for extremely verbose logging messages.
+	 * @example
+	 * logger.silly("Iteration 14563 completed");
 	 */
-	SILLY = 6
+	SILLY = 7
 }
 /**
  * Represents a single log entry with message, severity level, timestamp, and optional metadata
@@ -216,103 +241,290 @@ export declare class Logger {
 	 */
 	private processEntry;
 	/**
-	 * Logs an error message
+	 * Logs an error message (highest severity)
 	 * @param message The error message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.error("Database connection failed", { error: error.stack });
 	 */
 	error(message: string, metadata?: Record<string, any>): void;
 	/**
 	 * Logs a warning message
 	 * @param message The warning message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.warn("High memory usage detected", { usage: "85%" });
 	 */
 	warn(message: string, metadata?: Record<string, any>): void;
+	/**
+	 * Logs security-sensitive audit events
+	 * @param message The audit message
+	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.audit("User permissions modified", {
+	 *   actor: "admin@example.com",
+	 *   action: "role_change",
+	 *   target: "user:1234"
+	 * });
+	 */
+	audit(message: string, metadata?: Record<string, any>): void;
 	/**
 	 * Logs an informational message
 	 * @param message The info message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.info("Server started", { port: 3000, env: "production" });
 	 */
 	info(message: string, metadata?: Record<string, any>): void;
 	/**
-	 * Logs an HTTP-related message
+	 * Logs HTTP-related messages
 	 * @param message The HTTP message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.http("Request completed", {
+	 *   method: "GET",
+	 *   path: "/api/users",
+	 *   status: 200,
+	 *   duration: "45ms"
+	 * });
 	 */
 	http(message: string, metadata?: Record<string, any>): void;
 	/**
-	 * Logs a verbose message
-	 * @param message The verbose message
-	 * @param metadata Optional metadata object
-	 */
-	verbose(message: string, metadata?: Record<string, any>): void;
-	/**
-	 * Logs a debug message
+	 * Logs debug information (for development environments)
 	 * @param message The debug message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.debug("Database query", {
+	 *   query: "SELECT * FROM users",
+	 *   parameters: { limit: 50 }
+	 * });
 	 */
 	debug(message: string, metadata?: Record<string, any>): void;
 	/**
-	 * Logs a silly message (lowest level)
-	 * @param message The silly message
+	 * Logs verbose tracing information (very detailed)
+	 * @param message The verbose message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.verbose("Cache update cycle", {
+	 *   entriesProcessed: 1423,
+	 *   memoryUsage: "1.2MB"
+	 * });
+	 */
+	verbose(message: string, metadata?: Record<string, any>): void;
+	/**
+	 * Logs extremely low-level details (lowest severity)
+	 * @param message The silly message
+	 * @param metadata Optional metadata data
+	 * @example
+	 * logger.silly("Iteration complete", { iteration: 14563 });
 	 */
 	silly(message: string, metadata?: Record<string, any>): void;
 	/**
 	 * Adds a new transport to the logger
 	 * @param transport The transport to add
+	 * @example
+	 * logger.addTransport(new LokiTransport({ url: "http://loki:3100" }));
 	 */
 	addTransport(transport: Transport): void;
 	/**
 	 * Removes a transport from the logger
 	 * @param transport The transport to remove
+	 * @example
+	 * logger.removeTransport(consoleTransport);
 	 */
 	removeTransport(transport: Transport): void;
 	/**
 	 * Sets the minimum log level
 	 * @param level The new minimum log level
+	 * @example
+	 * // Only show errors and warnings
+	 * logger.setLevel(Levels.WARN);
 	 */
 	setLevel(level: Levels): void;
 }
 /**
- * Transport that outputs logs to the console with configurable formatting
+ * Transport that outputs logs to the console with configurable formatting and colors.
+ *
+ * Features:
+ * - Customizable output format with extensive placeholder support
+ * - ANSI color support (enabled by default)
+ * - Cross-platform compatibility (Node.js and browsers)
+ * - Lightweight and performant
+ *
+ * @example
+ * // Basic usage with default formatting
+ * const transport = new ConsoleTransport();
+ *
+ * @example
+ * // Custom format with local timestamps
+ * const transport = new ConsoleTransport(
+ *   "[{datetime-local}] {type} - {message}",
+ *   true
+ * );
  */
 export declare class ConsoleTransport implements Transport {
 	private format;
 	private colors;
 	/**
-	 * Create a ConsoleTransport instance
-	 * @param format Format string using {date}, {type}, {message} placeholders
-	 * @param colors Enable colored output
+	 * Creates a new ConsoleTransport instance
+	 * @param format Format string supporting these placeholders:
+	 *
+	 * ### Time/Date Formats
+	 * - `{iso}`: Full ISO-8601 UTC format (YYYY-MM-DDTHH:MM:SS.mmmZ)
+	 * - `{datetime}`: Simplified UTC (YYYY-MM-DD HH:MM:SS)
+	 * - `{date}`: UTC date only (YYYY-MM-DD)
+	 * - `{time}`: UTC time only (HH:MM:SS)
+	 * - `{datetime-local}`: Local datetime (YYYY-MM-DD HH:MM:SS)
+	 * - `{date-local}`: Local date only (YYYY-MM-DD)
+	 * - `{time-local}`: Local time only (HH:MM:SS)
+	 * - `{ms}`: Milliseconds since epoch
+	 *
+	 * ### Log Content
+	 * - `{type}`: Log level name (e.g., "INFO")
+	 * - `{message}`: The log message content
+	 *
+	 * @default "[{datetime-local}] {type} {message}"
+	 *
+	 * @param colors Enable ANSI color output. When disabled:
+	 *   - Improves performance in non-TTY environments
+	 *   - Removes all color formatting
+	 * @default true
+	 *
+	 * @example
+	 * // UTC format example
+	 * new ConsoleTransport("{date} {time} [{type}] {message}");
+	 *
+	 * @example
+	 * // Local time with colors disabled
+	 * new ConsoleTransport("{time-local} - {message}", false);
 	 */
 	constructor(format?: string, colors?: boolean);
 	/**
-	 * Output a log entry to the console
-	 * @param entry The log entry to output
+	 * Formats and outputs a log entry to the console.
+	 *
+	 * Applies the configured format with these features:
+	 * - All specified placeholders are replaced
+	 * - Colors are applied to level names and messages
+	 * - Timestamps are dimmed for better readability
+	 *
+	 * @param entry The log entry containing:
+	 *   - message: string - The primary log content
+	 *   - level: Levels - The severity level
+	 *   - timestamp: number - Creation time (ms since epoch)
+	 *
+	 * @example
+	 * // With all placeholder types
+	 * transport.log({
+	 *   message: "User logged in",
+	 *   level: Levels.INFO,
+	 *   timestamp: Date.now()
+	 * });
 	 */
 	log(entry: LogEntry): void;
 }
 /**
- * Transport that collects logs in NDJSON (Newline Delimited JSON) format
+ * Transport that collects logs in NDJSON (Newline Delimited JSON) format.
+ *
+ * This transport accumulates log entries in memory as NDJSON strings,
+ * which can be retrieved or cleared as needed. Useful for:
+ * - Log aggregation
+ * - Bulk exporting logs
+ * - Integration with log processing pipelines
+ *
+ * @example
+ * // Basic usage
+ * const transport = new NDJsonTransport();
+ * const logger = new Logger({ transports: [transport] });
+ *
+ * // Get logs as NDJSON string
+ * const logs = transport.getData();
+ *
+ * @example
+ * // Periodic log flushing
+ * setInterval(() => {
+ *   const logs = transport.getData();
+ *   if (logs) {
+ *     sendToServer(logs);
+ *     transport.reset();
+ *   }
+ * }, 60000);
  */
 export declare class NDJsonTransport implements Transport {
 	private data;
 	/**
-	 * Append a log entry to the NDJSON buffer
-	 * @param entry The log entry to append
+	 * Appends a log entry to the internal NDJSON buffer.
+	 *
+	 * Automatically adds newline separators between entries.
+	 *
+	 * @param entry The log entry to append. Must contain:
+	 * - message: string
+	 * - level: Levels
+	 * - timestamp: number
+	 * - metadata?: object
+	 *
+	 * @example
+	 * transport.log({
+	 *   message: "System started",
+	 *   level: Levels.INFO,
+	 *   timestamp: Date.now()
+	 * });
 	 */
 	log(entry: LogEntry): void;
 	/**
-	 * Get the accumulated NDJSON data
-	 * @returns The NDJSON formatted log data
+	 * Retrieves all accumulated logs as an NDJSON string.
+	 *
+	 * The returned string will contain one log entry per line,
+	 * with each line being a valid JSON string.
+	 *
+	 * @returns {string} NDJSON formatted log data. Returns empty string if no logs.
+	 *
+	 * @example
+	 * // Get logs for API response
+	 * app.get('/logs', (req, res) => {
+	 *   res.type('application/x-ndjson');
+	 *   res.send(transport.getData());
+	 * });
 	 */
 	getData(): string;
 	/**
-	 * Clear the accumulated log data
+	 * Clears all accumulated log data from memory.
+	 *
+	 * Typically called after successfully transmitting logs
+	 * to prevent duplicate processing.
+	 *
+	 * @example
+	 * // Clear after successful upload
+	 * if (uploadLogs(transport.getData())) {
+	 *   transport.reset();
+	 * }
 	 */
 	reset(): void;
 }
 /**
- * Transport that sends logs to a Grafana Loki server
+ * Transport that sends logs to a Grafana Loki server with batching and retry support.
+ *
+ * Features:
+ * - Automatic batching of logs for efficient transmission
+ * - Configurable batch size and timeout
+ * - Label management with cardinality control
+ * - Multi-tenancy support via X-Scope-OrgID
+ * - Basic authentication support
+ *
+ * @example
+ * // Basic configuration
+ * const lokiTransport = new LokiTransport({
+ *   url: "http://localhost:3100",
+ *   labels: { app: "my-app", env: "production" }
+ * });
+ *
+ * @example
+ * // With authentication and custom batching
+ * const securedTransport = new LokiTransport({
+ *   url: "http://loki.example.com",
+ *   basicAuth: { username: "user", password: "pass" },
+ *   batchSize: 20,
+ *   batchTimeout: 10000 // 10 seconds
+ * });
  */
 export declare class LokiTransport implements Transport {
 	private config;
@@ -323,19 +535,48 @@ export declare class LokiTransport implements Transport {
 	private maxLabelCount;
 	private debug;
 	/**
-	 * Create a LokiTransport instance
+	 * Creates a new LokiTransport instance
 	 * @param config Configuration options for Loki
+	 * @param config.url Required Loki server URL (e.g., "http://localhost:3100")
+	 * @param config.labels Base labels to attach to all log entries
+	 * @param config.basicAuth Basic authentication credentials
+	 * @param config.batchSize Maximum number of logs to batch before sending (default: 10)
+	 * @param config.batchTimeout Maximum time (ms) to wait before sending a batch (default: 5000)
+	 * @param config.tenantID Tenant ID for multi-tenant Loki setups
+	 * @param config.maxLabelCount Maximum number of labels allowed (default: 50)
+	 * @param config.debug Enable debug logging for transport errors (default: false)
 	 * @throws {Error} If URL is not provided
 	 */
 	constructor(config: LokiConfig);
 	/**
-	 * Add a log entry to the batch (may trigger send if batch size is reached)
-	 * @param entry The log entry to send
+	 * Adds a log entry to the current batch. Automatically sends the batch when:
+	 * - The batch reaches the configured size, OR
+	 * - The batch timeout is reached
+	 *
+	 * @param entry The log entry to send. Metadata will be converted to Loki labels
+	 *              following the configured maxLabelCount rules.
+	 *
+	 * @example
+	 * transport.log({
+	 *   message: "User logged in",
+	 *   level: Levels.INFO,
+	 *   timestamp: Date.now(),
+	 *   metadata: { userId: "123", device: "mobile" }
+	 * });
 	 */
 	log(entry: LogEntry): void;
 	/**
-	 * Send the current batch of logs to Loki
+	 * Immediately sends the current batch of logs to Loki.
 	 * @private
+	 *
+	 * Handles:
+	 * - HTTP headers including auth and tenant ID
+	 * - Batch timeout clearing
+	 * - Error logging (when debug enabled)
+	 * - Batch management
+	 *
+	 * Note: This method is called automatically by the transport
+	 * and typically doesn't need to be called directly.
 	 */
 	private sendBatch;
 }

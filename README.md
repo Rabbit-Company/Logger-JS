@@ -12,7 +12,7 @@ A versatile, multi-transport logging library for Node.js and browser environment
 
 ## Features ✨
 
-- **Multiple log levels**: ERROR, WARN, INFO, HTTP, VERBOSE, DEBUG, SILLY
+- **Multiple log levels**: ERROR, WARN, AUDIT, INFO, HTTP, DEBUG, VERBOSE, SILLY
 - **Structured logging**: Attach metadata objects to log entries
 - **Transport system**: Console, NDJSON, and Loki transports included
 - **Loki optimized**: Automatic label management and batching
@@ -48,6 +48,42 @@ logger.error("Database connection failed", {
 });
 ```
 
+## Console Formatting 🖥️
+
+The console transport supports extensive datetime formatting:
+
+### Available Placeholders
+
+#### UTC Formats:
+
+- `{iso}`: Full ISO-8601 (2023-11-15T14:30:45.123Z)
+- `{datetime}`: Simplified (2023-11-15 14:30:45)
+- `{date}`: Date only (2023-11-15)
+- `{time}`: Time only (14:30:45)
+- `{utc}`: UTC string (Wed, 15 Nov 2023 14:30:45 GMT)
+- `{ms}`: Milliseconds since epoch
+
+#### Local Time Formats:
+
+- `{datetime-local}`: Local datetime (2023-11-15 14:30:45)
+- `{date-local}`: Local date only (2023-11-15)
+- `{time-local}`: Local time only (14:30:45)
+- `{full-local}`: Complete local string with timezone
+
+#### Log Content:
+
+- `{type}`: Log level (INFO, ERROR, etc.)
+- `{message}`: The log message
+
+```js
+import { ConsoleTransport } from "@rabbit-company/logger";
+
+// Custom format examples
+new ConsoleTransport("[{datetime-local}] {type} {message}");
+new ConsoleTransport("{time} | {type} | {message}", false);
+new ConsoleTransport("EPOCH:{ms} {message}");
+```
+
 ## Transports 🚚
 
 ### Console Transport (Default)
@@ -58,7 +94,7 @@ import { ConsoleTransport } from "@rabbit-company/logger";
 const logger = new Logger({
 	transports: [
 		new ConsoleTransport(
-			"[{date}] {type} {message}", // Custom format
+			"[{time-local}] {type} {message}", // Custom format
 			true // Enable colors
 		),
 	],
@@ -104,11 +140,12 @@ const logger = new Logger({
 enum Levels {
   ERROR,    // Critical errors
   WARN,     // Warnings
-  INFO,     // Informational messages
-  HTTP,     // HTTP-related logs
-  VERBOSE,  // Verbose debugging
-  DEBUG,    // Debug messages
-  SILLY     // Very low-level logs
+  AUDIT,    // Security audits
+  INFO,     // Informational
+  HTTP,     // HTTP traffic
+  DEBUG,    // Debugging
+  VERBOSE,  // Detailed tracing
+  SILLY     // Very low-level
 }
 ```
 
@@ -117,6 +154,7 @@ enum Levels {
 ```js
 logger.error(message: string, metadata?: object): void
 logger.warn(message: string, metadata?: object): void
+logger.audit(message: string, metadata?: object): void
 logger.info(message: string, metadata?: object): void
 logger.http(message: string, metadata?: object): void
 logger.verbose(message: string, metadata?: object): void

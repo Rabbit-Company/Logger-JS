@@ -80,9 +80,11 @@ export class Logger {
 	}
 
 	/**
-	 * Logs an error message
+	 * Logs an error message (highest severity)
 	 * @param message The error message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.error("Database connection failed", { error: error.stack });
 	 */
 	error(message: string, metadata?: Record<string, any>): void {
 		this.processEntry(this.createLogEntry(message, Levels.ERROR, metadata));
@@ -92,51 +94,89 @@ export class Logger {
 	 * Logs a warning message
 	 * @param message The warning message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.warn("High memory usage detected", { usage: "85%" });
 	 */
 	warn(message: string, metadata?: Record<string, any>): void {
 		this.processEntry(this.createLogEntry(message, Levels.WARN, metadata));
 	}
 
 	/**
+	 * Logs security-sensitive audit events
+	 * @param message The audit message
+	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.audit("User permissions modified", {
+	 *   actor: "admin@example.com",
+	 *   action: "role_change",
+	 *   target: "user:1234"
+	 * });
+	 */
+	audit(message: string, metadata?: Record<string, any>): void {
+		this.processEntry(this.createLogEntry(message, Levels.AUDIT, metadata));
+	}
+
+	/**
 	 * Logs an informational message
 	 * @param message The info message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.info("Server started", { port: 3000, env: "production" });
 	 */
 	info(message: string, metadata?: Record<string, any>): void {
 		this.processEntry(this.createLogEntry(message, Levels.INFO, metadata));
 	}
 
 	/**
-	 * Logs an HTTP-related message
+	 * Logs HTTP-related messages
 	 * @param message The HTTP message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.http("Request completed", {
+	 *   method: "GET",
+	 *   path: "/api/users",
+	 *   status: 200,
+	 *   duration: "45ms"
+	 * });
 	 */
 	http(message: string, metadata?: Record<string, any>): void {
 		this.processEntry(this.createLogEntry(message, Levels.HTTP, metadata));
 	}
 
 	/**
-	 * Logs a verbose message
-	 * @param message The verbose message
-	 * @param metadata Optional metadata object
-	 */
-	verbose(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.VERBOSE, metadata));
-	}
-
-	/**
-	 * Logs a debug message
+	 * Logs debug information (for development environments)
 	 * @param message The debug message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.debug("Database query", {
+	 *   query: "SELECT * FROM users",
+	 *   parameters: { limit: 50 }
+	 * });
 	 */
 	debug(message: string, metadata?: Record<string, any>): void {
 		this.processEntry(this.createLogEntry(message, Levels.DEBUG, metadata));
 	}
 
 	/**
-	 * Logs a silly message (lowest level)
-	 * @param message The silly message
+	 * Logs verbose tracing information (very detailed)
+	 * @param message The verbose message
 	 * @param metadata Optional metadata object
+	 * @example
+	 * logger.verbose("Cache update cycle", {
+	 *   entriesProcessed: 1423,
+	 *   memoryUsage: "1.2MB"
+	 * });
+	 */
+	verbose(message: string, metadata?: Record<string, any>): void {
+		this.processEntry(this.createLogEntry(message, Levels.VERBOSE, metadata));
+	}
+
+	/**
+	 * Logs extremely low-level details (lowest severity)
+	 * @param message The silly message
+	 * @param metadata Optional metadata data
+	 * @example
+	 * logger.silly("Iteration complete", { iteration: 14563 });
 	 */
 	silly(message: string, metadata?: Record<string, any>): void {
 		this.processEntry(this.createLogEntry(message, Levels.SILLY, metadata));
@@ -145,6 +185,8 @@ export class Logger {
 	/**
 	 * Adds a new transport to the logger
 	 * @param transport The transport to add
+	 * @example
+	 * logger.addTransport(new LokiTransport({ url: "http://loki:3100" }));
 	 */
 	addTransport(transport: Transport): void {
 		this.transports.push(transport);
@@ -153,6 +195,8 @@ export class Logger {
 	/**
 	 * Removes a transport from the logger
 	 * @param transport The transport to remove
+	 * @example
+	 * logger.removeTransport(consoleTransport);
 	 */
 	removeTransport(transport: Transport): void {
 		this.transports = this.transports.filter((t) => t !== transport);
@@ -161,6 +205,9 @@ export class Logger {
 	/**
 	 * Sets the minimum log level
 	 * @param level The new minimum log level
+	 * @example
+	 * // Only show errors and warnings
+	 * logger.setLevel(Levels.WARN);
 	 */
 	setLevel(level: Levels): void {
 		this.level = level;

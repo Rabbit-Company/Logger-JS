@@ -2,7 +2,30 @@ import { formatLokiMessage } from "../formatters/lokiFormatter";
 import type { LogEntry, LokiConfig, Transport } from "../types";
 
 /**
- * Transport that sends logs to a Grafana Loki server
+ * Transport that sends logs to a Grafana Loki server with batching and retry support.
+ *
+ * Features:
+ * - Automatic batching of logs for efficient transmission
+ * - Configurable batch size and timeout
+ * - Label management with cardinality control
+ * - Multi-tenancy support via X-Scope-OrgID
+ * - Basic authentication support
+ *
+ * @example
+ * // Basic configuration
+ * const lokiTransport = new LokiTransport({
+ *   url: "http://localhost:3100",
+ *   labels: { app: "my-app", env: "production" }
+ * });
+ *
+ * @example
+ * // With authentication and custom batching
+ * const securedTransport = new LokiTransport({
+ *   url: "http://loki.example.com",
+ *   basicAuth: { username: "user", password: "pass" },
+ *   batchSize: 20,
+ *   batchTimeout: 10000 // 10 seconds
+ * });
  */
 export class LokiTransport implements Transport {
 	private batch: any[] = [];
@@ -13,8 +36,16 @@ export class LokiTransport implements Transport {
 	private debug: boolean;
 
 	/**
-	 * Create a LokiTransport instance
+	 * Creates a new LokiTransport instance
 	 * @param config Configuration options for Loki
+	 * @param config.url Required Loki server URL (e.g., "http://localhost:3100")
+	 * @param config.labels Base labels to attach to all log entries
+	 * @param config.basicAuth Basic authentication credentials
+	 * @param config.batchSize Maximum number of logs to batch before sending (default: 10)
+	 * @param config.batchTimeout Maximum time (ms) to wait before sending a batch (default: 5000)
+	 * @param config.tenantID Tenant ID for multi-tenant Loki setups
+	 * @param config.maxLabelCount Maximum number of labels allowed (default: 50)
+	 * @param config.debug Enable debug logging for transport errors (default: false)
 	 * @throws {Error} If URL is not provided
 	 */
 	constructor(private config: LokiConfig) {
@@ -29,8 +60,20 @@ export class LokiTransport implements Transport {
 	}
 
 	/**
-	 * Add a log entry to the batch (may trigger send if batch size is reached)
-	 * @param entry The log entry to send
+	 * Adds a log entry to the current batch. Automatically sends the batch when:
+	 * - The batch reaches the configured size, OR
+	 * - The batch timeout is reached
+	 *
+	 * @param entry The log entry to send. Metadata will be converted to Loki labels
+	 *              following the configured maxLabelCount rules.
+	 *
+	 * @example
+	 * transport.log({
+	 *   message: "User logged in",
+	 *   level: Levels.INFO,
+	 *   timestamp: Date.now(),
+	 *   metadata: { userId: "123", device: "mobile" }
+	 * });
 	 */
 	log(entry: LogEntry): void {
 		const lokiMessage = formatLokiMessage(entry, this.maxLabelCount, { ...this.config.labels, ...entry.metadata });
@@ -44,8 +87,17 @@ export class LokiTransport implements Transport {
 	}
 
 	/**
-	 * Send the current batch of logs to Loki
+	 * Immediately sends the current batch of logs to Loki.
 	 * @private
+	 *
+	 * Handles:
+	 * - HTTP headers including auth and tenant ID
+	 * - Batch timeout clearing
+	 * - Error logging (when debug enabled)
+	 * - Batch management
+	 *
+	 * Note: This method is called automatically by the transport
+	 * and typically doesn't need to be called directly.
 	 */
 	private async sendBatch(): Promise<void> {
 		if (this.timeoutHandle) {

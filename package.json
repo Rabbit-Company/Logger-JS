@@ -1,6 +1,6 @@
 {
 	"name": "@rabbit-company/logger",
-	"version": "5.0.0",
+	"version": "5.1.0",
 	"description": "A simple and lightweight logger",
 	"main": "./module/index.js",
 	"type": "module",
@@ -31,6 +31,7 @@
 		"logger",
 		"console",
 		"ndjson",
+		"grafana",
 		"loki"
 	],
 	"devDependencies": {

@@ -26,38 +26,68 @@ var Levels;
 ((Levels2) => {
   Levels2[Levels2["ERROR"] = 0] = "ERROR";
   Levels2[Levels2["WARN"] = 1] = "WARN";
-  Levels2[Levels2["INFO"] = 2] = "INFO";
-  Levels2[Levels2["HTTP"] = 3] = "HTTP";
-  Levels2[Levels2["VERBOSE"] = 4] = "VERBOSE";
+  Levels2[Levels2["AUDIT"] = 2] = "AUDIT";
+  Levels2[Levels2["INFO"] = 3] = "INFO";
+  Levels2[Levels2["HTTP"] = 4] = "HTTP";
   Levels2[Levels2["DEBUG"] = 5] = "DEBUG";
-  Levels2[Levels2["SILLY"] = 6] = "SILLY";
+  Levels2[Levels2["VERBOSE"] = 6] = "VERBOSE";
+  Levels2[Levels2["SILLY"] = 7] = "SILLY";
 })(Levels ||= {});
 var LevelColors = {
   [0 /* ERROR */]: "\x1B[31m" /* RED */,
   [1 /* WARN */]: "\x1B[93m" /* BRIGHT_YELLOW */,
-  [2 /* INFO */]: "\x1B[36m" /* CYAN */,
-  [3 /* HTTP */]: "\x1B[34m" /* BLUE */,
-  [4 /* VERBOSE */]: "\x1B[34m" /* BLUE */,
-  [5 /* DEBUG */]: "\x1B[90m" /* BRIGHT_BLACK */,
-  [6 /* SILLY */]: "\x1B[90m" /* BRIGHT_BLACK */
+  [2 /* AUDIT */]: "\x1B[35m" /* MAGENTA */,
+  [3 /* INFO */]: "\x1B[36m" /* CYAN */,
+  [4 /* HTTP */]: "\x1B[34m" /* BLUE */,
+  [5 /* DEBUG */]: "\x1B[34m" /* BLUE */,
+  [6 /* VERBOSE */]: "\x1B[90m" /* BRIGHT_BLACK */,
+  [7 /* SILLY */]: "\x1B[90m" /* BRIGHT_BLACK */
 };
 // src/formatters/consoleFormatter.ts
 function formatConsoleMessage(message, logLevel, format, colorsEnabled) {
-  let type = Levels[logLevel];
-  let date = new Date().toISOString().split(".")[0].replace("T", " ");
+  const now = new Date;
+  const type = Levels[logLevel];
+  const utcFormats = {
+    "{iso}": now.toISOString(),
+    "{datetime}": now.toISOString().split(".")[0].replace("T", " "),
+    "{time}": now.toISOString().split("T")[1].split(".")[0],
+    "{date}": now.toISOString().split("T")[0],
+    "{utc}": now.toUTCString(),
+    "{ms}": now.getTime().toString()
+  };
+  const localFormats = {
+    "{datetime-local}": now.toLocaleString("sv-SE").replace(" ", "T").split(".")[0].replace("T", " "),
+    "{time-local}": now.toLocaleTimeString("sv-SE"),
+    "{date-local}": now.toLocaleDateString("sv-SE"),
+    "{full-local}": now.toString()
+  };
+  let coloredType = type;
+  let coloredMessage = message;
   if (colorsEnabled) {
-    date = "\x1B[90m" /* BRIGHT_BLACK */ + date + "\x1B[0m" /* RESET */;
-    type = "\x1B[1m" /* BOLD */ + LevelColors[logLevel] + type + "\x1B[0m" /* RESET */;
-    message = LevelColors[logLevel] + message + "\x1B[0m" /* RESET */;
+    const color = LevelColors[logLevel];
+    const colorize = (text) => "\x1B[90m" /* BRIGHT_BLACK */ + text + "\x1B[0m" /* RESET */;
+    Object.keys(utcFormats).forEach((key) => {
+      utcFormats[key] = colorize(utcFormats[key]);
+    });
+    Object.keys(localFormats).forEach((key) => {
+      localFormats[key] = colorize(localFormats[key]);
+    });
+    coloredType = "\x1B[1m" /* BOLD */ + color + type + "\x1B[0m" /* RESET */;
+    coloredMessage = color + message + "\x1B[0m" /* RESET */;
   }
-  return format.replace("{date}", date).replace("{type}", type).replace("{message}", message);
+  let output = format;
+  const allFormats = { ...utcFormats, ...localFormats };
+  for (const [placeholder, value] of Object.entries(allFormats)) {
+    output = output.replace(new RegExp(placeholder, "g"), value);
+  }
+  return output.replace(/{type}/g, coloredType).replace(/{message}/g, coloredMessage);
 }
 
 // src/transports/consoleTransport.ts
 class ConsoleTransport {
   format;
   colors;
-  constructor(format = "[{date}] {type} {message}", colors = true) {
+  constructor(format = "[{datetime-local}] {type} {message}", colors = true) {
     this.format = format;
     this.colors = colors;
   }
@@ -68,7 +98,7 @@ class ConsoleTransport {
 
 // src/logger.ts
 class Logger {
-  level = 2 /* INFO */;
+  level = 3 /* INFO */;
   transports = [new ConsoleTransport];
   constructor(config) {
     if (config?.level !== undefined) {
@@ -102,20 +132,23 @@ class Logger {
   warn(message, metadata) {
     this.processEntry(this.createLogEntry(message, 1 /* WARN */, metadata));
   }
+  audit(message, metadata) {
+    this.processEntry(this.createLogEntry(message, 2 /* AUDIT */, metadata));
+  }
   info(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 2 /* INFO */, metadata));
+    this.processEntry(this.createLogEntry(message, 3 /* INFO */, metadata));
   }
   http(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 3 /* HTTP */, metadata));
-  }
-  verbose(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 4 /* VERBOSE */, metadata));
+    this.processEntry(this.createLogEntry(message, 4 /* HTTP */, metadata));
   }
   debug(message, metadata) {
     this.processEntry(this.createLogEntry(message, 5 /* DEBUG */, metadata));
   }
+  verbose(message, metadata) {
+    this.processEntry(this.createLogEntry(message, 6 /* VERBOSE */, metadata));
+  }
   silly(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 6 /* SILLY */, metadata));
+    this.processEntry(this.createLogEntry(message, 7 /* SILLY */, metadata));
   }
   addTransport(transport) {
     this.transports.push(transport);
