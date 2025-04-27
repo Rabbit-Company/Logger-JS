@@ -1,113 +1,241 @@
-# Logger-JS
+# @rabbit-company/logger 🐇📝
 
-`Logger-JS` is a lightweight logging utility for JavaScript (ES6) that provides various logging levels and supports NDJson formatting for structured logging.
+[![NPM Version](https://img.shields.io/npm/v/@rabbit-company/logger)](https://www.npmjs.com/package/@rabbit-company/logger)
+[![JSR Version](https://jsr.io/badges/@rabbit-company/logger)](https://jsr.io/@rabbit-company/logger)
+[![License](https://img.shields.io/npm/l/@rabbit-company/logger)](LICENSE)
 
-## Table of Contents
+A versatile, multi-transport logging library for Node.js and browser environments with support for:
 
-1. [Installation](#installation)
-2. [Importing the Library](#importing-the-library)
-3. [Configuration](#configuration)
-4. [Logging Messages](#logging-messages)
-5. [NDJson Logging](#ndjson-logging)
-6. [Customization](#customization)
+- Console output (with colors and custom formatting)
+- NDJSON (Newline Delimited JSON)
+- Grafana Loki (with batching and label management)
 
-## Installation
+## Features ✨
 
-To install `Logger-JS`, use npm to add it to your project:
+- **Multiple log levels**: ERROR, WARN, INFO, HTTP, VERBOSE, DEBUG, SILLY
+- **Structured logging**: Attach metadata objects to log entries
+- **Transport system**: Console, NDJSON, and Loki transports included
+- **Loki optimized**: Automatic label management and batching
+- **TypeScript ready**: Full type definitions included
+- **Cross-platform**: Works in Node.js, Deno, Bun and browsers
+
+## Installation 📦
 
 ```bash
-npm i --save @rabbit-company/logger
+# npm
+npm install @rabbit-company/logger
+
+# yarn
+yarn add @rabbit-company/logger
+
+# pnpm
+pnpm add @rabbit-company/logger
 ```
 
-## Importing the Library
-
-After installation, you can import the `Logger` into your JavaScript file:
+## Basic Usage 🚀
 
 ```js
-import Logger from "@rabbit-company/logger";
+import { Logger, Levels } from "@rabbit-company/logger";
+
+// Create logger with default console transport
+const logger = new Logger({ level: Levels.DEBUG });
+
+// Log messages with metadata
+logger.info("Application started", { version: "1.0.0" });
+logger.error("Database connection failed", {
+	error: "Connection timeout",
+	attempt: 3,
+});
 ```
 
-## Configuration
+## Transports 🚚
 
-Configure the logger to suit your needs. You can set the log level to control which types of messages are logged:
+### Console Transport (Default)
 
 ```js
-// Set the log level to SILLY to enable all levels of logging
-Logger.level = Logger.Levels.SILLY;
+import { ConsoleTransport } from "@rabbit-company/logger";
 
-// Enable or disable colored output
-Logger.colors = true; // Set to false to disable colors
-
-// Enable or disable NDJson logging
-Logger.NDJson = false; // Set to true to enable NDJson logging
+const logger = new Logger({
+	transports: [
+		new ConsoleTransport(
+			"[{date}] {type} {message}", // Custom format
+			true // Enable colors
+		),
+	],
+});
 ```
 
-## Logging Messages
-
-Use the provided methods to log messages at different levels of severity:
+### NDJSON Transport
 
 ```js
-// Log an error message
-Logger.error("This is an error message.");
+import { NDJsonTransport } from "@rabbit-company/logger";
 
-// Log a warning message
-Logger.warn("This is a warning message.");
+const ndjsonTransport = new NDJsonTransport();
+const logger = new Logger({
+	transports: [ndjsonTransport],
+});
 
-// Log an informational message
-Logger.info("This is an informational message.");
-
-// Log an HTTP-related message
-Logger.http("This is an HTTP-related message.");
-
-// Log a verbose message
-Logger.verbose("This is a verbose message.");
-
-// Log a debug message
-Logger.debug("This is a debug message.");
-
-// Log a silly message
-Logger.silly("This is a silly message.");
+// Get accumulated logs
+console.log(ndjsonTransport.getData());
 ```
 
-## NDJson Logging
-
-When NDJson logging is enabled, log messages are formatted as newline-delimited JSON. You can retrieve the NDJson formatted log using:
+### Loki Transport
 
 ```js
-// Enable NDJson logging
-Logger.NDJson = true;
+import { LokiTransport } from "@rabbit-company/logger";
 
-// Retrieve NDJson log data
-const ndjsonLog = Logger.getNDJson();
-console.log(ndjsonLog);
-
-// Clear NDJson log data
-Logger.resetNDJson();
+const logger = new Logger({
+	transports: [
+		new LokiTransport({
+			url: "http://localhost:3100",
+			labels: { app: "my-app", env: "production" },
+			basicAuth: { username: "user", password: "pass" },
+			maxLabelCount: 30,
+		}),
+	],
+});
 ```
 
-## Customization
+## API Reference 📚
 
-### 1. Customizing Log Colors
-
-You can customize the colors associated with different logging levels by modifying the `LevelColors` mapping:
+### Log Levels
 
 ```js
-// Change colors for different log levels
-Logger.LevelColors[Logger.Levels.ERROR] = Logger.Colors.BRIGHT_RED;
-Logger.LevelColors[Logger.Levels.INFO] = Logger.Colors.GREEN;
+enum Levels {
+  ERROR,    // Critical errors
+  WARN,     // Warnings
+  INFO,     // Informational messages
+  HTTP,     // HTTP-related logs
+  VERBOSE,  // Verbose debugging
+  DEBUG,    // Debug messages
+  SILLY     // Very low-level logs
+}
 ```
 
-### 2. Customizing Log Message Format
-
-You can also customize the format of the log messages by setting the `Logger.format` string. This format string can include the following placeholders:
-
-- `{date}`: Inserts the current timestamp.
-- `{type}`: Inserts the log level type (e.g., ERROR, INFO).
-- `{message}`: Inserts the actual log message.
-
-Example of customizing the log format:
+### Logging Methods
 
 ```js
-// Set a custom log message format
-Logger.format = "[{date}] - {type}: {message}";
+logger.error(message: string, metadata?: object): void
+logger.warn(message: string, metadata?: object): void
+logger.info(message: string, metadata?: object): void
+logger.http(message: string, metadata?: object): void
+logger.verbose(message: string, metadata?: object): void
+logger.debug(message: string, metadata?: object): void
+logger.silly(message: string, metadata?: object): void
 ```
+
+### Types
+
+```ts
+/**
+ * Represents a single log entry with message, severity level, timestamp, and optional metadata
+ */
+export interface LogEntry {
+	/** The log message content */
+	message: string;
+	/** Severity level of the log entry */
+	level: Levels;
+	/** Timestamp in milliseconds since epoch */
+	timestamp: number;
+	/** Optional structured metadata associated with the log */
+	metadata?: Record<string, any>;
+}
+
+/**
+ * Interface for log transport implementations
+ */
+export interface Transport {
+	/**
+	 * Processes and outputs a log entry
+	 * @param entry The log entry to process
+	 */
+	log: (entry: LogEntry) => void;
+}
+
+/**
+ * Configuration options for the Logger instance
+ */
+export interface LoggerConfig {
+	/** Minimum log level to output (default: INFO) */
+	level?: Levels;
+	/** Enable colored output (default: true) */
+	colors?: boolean;
+	/** Format string using {date}, {type}, {message} placeholders (default: "[{date}] {type} {message}") */
+	format?: string;
+	/** Array of transports to use (default: [ConsoleTransport]) */
+	transports?: Transport[];
+}
+
+/**
+ * Configuration for Loki transport
+ */
+export interface LokiConfig {
+	/** Loki server URL (e.g., "http://localhost:3100") */
+	url: string;
+	/** Base labels to attach to all logs */
+	labels?: Record<string, string>;
+	/** Basic authentication credentials */
+	basicAuth?: {
+		username: string;
+		password: string;
+	};
+	/** Number of logs to batch before sending (default: 10) */
+	batchSize?: number;
+	/** Maximum time in ms to wait before sending a batch (default: 5000) */
+	batchTimeout?: number;
+	/** Tenant ID for multi-tenant Loki setups */
+	tenantID?: string;
+	/** Maximum number of labels allowed (default: 50) */
+	maxLabelCount?: number;
+	/** Enable debug logging for transport errors (default: false) */
+	debug?: boolean;
+}
+
+/**
+ * Represents a Loki log stream with labels and log values
+ */
+export interface LokiStream {
+	/** Key-value pairs of log labels */
+	stream: {
+		/** Log level label (required) */
+		level: string;
+		/** Additional custom labels */
+		[key: string]: string;
+	};
+	/** Array of log entries with [timestamp, message] pairs */
+	values: [[string, string]];
+}
+```
+
+## Advanced Usage 🛠️
+
+### Custom Formatting
+
+```js
+new ConsoleTransport(
+	"{type} - {date} - {message}", // Custom format
+	false // Disable colors
+);
+```
+
+### Managing Transports
+
+```js
+const lokiTransport = new LokiTransport({
+	/* config */
+});
+const logger = new Logger();
+
+// Add transport dynamically
+logger.addTransport(lokiTransport);
+
+// Remove transport
+logger.removeTransport(lokiTransport);
+
+// Change log level
+logger.setLevel(Levels.VERBOSE);
+```
+
+## License 📄
+
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/Rabbit-Company/Logger-JS/blob/main/LICENSE) file for details.
