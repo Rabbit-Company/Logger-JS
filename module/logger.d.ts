@@ -110,6 +110,23 @@ export declare enum Levels {
 }
 /**
  * Represents a single log entry with message, severity level, timestamp, and optional metadata
+ *
+ * @interface LogEntry
+ * @property {string} message - The primary log message content
+ * @property {Levels} level - Severity level of the log entry
+ * @property {number} timestamp - Unix timestamp in milliseconds since epoch
+ * @property {Object.<string, any>} [metadata] - Optional structured metadata associated with the log
+ *
+ * @example
+ * {
+ *   message: "User login successful",
+ *   level: Levels.INFO,
+ *   timestamp: Date.now(),
+ *   metadata: {
+ *     userId: "12345",
+ *     ipAddress: "192.168.1.100"
+ *   }
+ * }
  */
 export interface LogEntry {
 	/** The log message content */
@@ -122,50 +139,168 @@ export interface LogEntry {
 	metadata?: Record<string, any>;
 }
 /**
- * Interface for log transport implementations
+ * Interface that all log transport implementations must adhere to
+ *
+ * @interface Transport
+ *
+ * @example
+ * class CustomTransport implements Transport {
+ *   log(entry: LogEntry) {
+ *     // Custom log handling implementation
+ *   }
+ * }
  */
 export interface Transport {
 	/**
 	 * Processes and outputs a log entry
-	 * @param entry The log entry to process
+	 * @param {LogEntry} entry - The log entry to process
+	 * @returns {void}
 	 */
 	log: (entry: LogEntry) => void;
 }
 /**
  * Configuration options for the Logger instance
+ *
+ * @interface LoggerConfig
+ * @property {Levels} [level=Levels.INFO] - Minimum log level to output
+ * @property {boolean} [colors=true] - Enable colored output in console
+ * @property {string} [format="[{datetime-local}] {type} {message}"] - Format string supporting these placeholders:
+ *
+ * ## Time/Date Placeholders
+ *
+ * ### UTC Formats
+ * - `{iso}`: Full ISO-8601 format with milliseconds (YYYY-MM-DDTHH:MM:SS.mmmZ)
+ * - `{datetime}`: Simplified ISO without milliseconds (YYYY-MM-DD HH:MM:SS)
+ * - `{date}`: Date component only (YYYY-MM-DD)
+ * - `{time}`: Time component only (HH:MM:SS)
+ * - `{utc}`: Complete UTC string (e.g., "Wed, 15 Nov 2023 14:30:45 GMT")
+ * - `{ms}`: Milliseconds since Unix epoch
+ *
+ * ### Local Time Formats
+ * - `{datetime-local}`: Local date and time (YYYY-MM-DD HH:MM:SS)
+ * - `{date-local}`: Local date only (YYYY-MM-DD)
+ * - `{time-local}`: Local time only (HH:MM:SS)
+ * - `{full-local}`: Complete local string with timezone
+ *
+ * ## Log Content Placeholders
+ * - `{type}`: Log level name (e.g., "INFO", "ERROR")
+ * - `{message}`: The actual log message content
+ *
+ * @property {Transport[]} [transports=[ConsoleTransport]] - Array of transports to use
+ *
+ * @example <caption>Default Format</caption>
+ * {
+ *   format: "[{datetime-local}] {type} {message}"
+ * }
+ *
+ * @example <caption>UTC Time Format</caption>
+ * {
+ *   format: "[{datetime} UTC] {type}: {message}"
+ * }
+ *
+ * @example <caption>Detailed Local Format</caption>
+ * {
+ *   format: "{date-local} {time-local} [{type}] {message}"
+ * }
+ *
+ * @example <caption>Epoch Timestamp</caption>
+ * {
+ *   format: "{ms} - {type} - {message}"
+ * }
  */
 export interface LoggerConfig {
 	/** Minimum log level to output (default: INFO) */
 	level?: Levels;
 	/** Enable colored output (default: true) */
 	colors?: boolean;
-	/** Format string using {date}, {type}, {message} placeholders (default: "[{date}] {type} {message}") */
+	/** Format string using placeholders (default: "[{datetime-local}] {type} {message}") */
 	format?: string;
 	/** Array of transports to use (default: [ConsoleTransport]) */
 	transports?: Transport[];
 }
 /**
- * Configuration for Loki transport
+ * Configuration options for the Loki transport
+ *
+ * @interface LokiConfig
+ *
+ * @example <caption>Basic Configuration</caption>
+ * {
+ *   url: "http://localhost:3100/loki/api/v1/push",
+ *   labels: { app: "frontend", env: "production" }
+ * }
+ *
+ * @example <caption>Advanced Configuration</caption>
+ * {
+ *   url: "http://loki.example.com",
+ *   basicAuth: { username: "user", password: "pass" },
+ *   tenantID: "team-a",
+ *   batchSize: 50,
+ *   batchTimeout: 2000,
+ *   maxQueueSize: 50000,
+ *   maxRetries: 10,
+ *   retryBaseDelay: 2000,
+ *   debug: true
+ * }
  */
 export interface LokiConfig {
-	/** Loki server URL (e.g., "http://localhost:3100") */
+	/**
+	 * Required Loki server endpoint URL
+	 * @example "http://loki.example.com"
+	 */
 	url: string;
-	/** Base labels to attach to all logs */
+	/**
+	 * Base labels attached to all log entries
+	 * @example { app: "frontend", env: "production" }
+	 */
 	labels?: Record<string, string>;
 	/** Basic authentication credentials */
 	basicAuth?: {
+		/** Basic auth username */
 		username: string;
+		/** Basic auth password */
 		password: string;
 	};
-	/** Number of logs to batch before sending (default: 10) */
-	batchSize?: number;
-	/** Maximum time in ms to wait before sending a batch (default: 5000) */
-	batchTimeout?: number;
-	/** Tenant ID for multi-tenant Loki setups */
+	/**
+	 * Tenant ID for multi-tenant Loki installations
+	 * @description Sets the X-Scope-OrgID header
+	 */
 	tenantID?: string;
-	/** Maximum number of labels allowed (default: 50) */
+	/**
+	 * Maximum number of labels allowed per log entry
+	 * @default 50
+	 */
 	maxLabelCount?: number;
-	/** Enable debug logging for transport errors (default: false) */
+	/**
+	 * Number of logs to accumulate before automatic sending
+	 * @default 10
+	 */
+	batchSize?: number;
+	/**
+	 * Maximum time in milliseconds to wait before sending an incomplete batch
+	 * @default 5000
+	 */
+	batchTimeout?: number;
+	/**
+	 * Maximum number of logs to buffer in memory during outages
+	 * @description When reached, oldest logs are dropped
+	 * @default 10000
+	 */
+	maxQueueSize?: number;
+	/**
+	 * Maximum number of attempts to send a failed batch
+	 * @default 5
+	 */
+	maxRetries?: number;
+	/**
+	 * Initial retry delay in milliseconds (exponential backoff base)
+	 * @description Delay doubles with each retry up to maximum 30s
+	 * @default 1000
+	 */
+	retryBaseDelay?: number;
+	/**
+	 * Enable debug logging for transport internals
+	 * @default false
+	 */
 	debug?: boolean;
 }
 /**
@@ -501,82 +636,122 @@ export declare class NDJsonTransport implements Transport {
 	reset(): void;
 }
 /**
- * Transport that sends logs to a Grafana Loki server with batching and retry support.
+ * High-reliability transport for sending logs to Grafana Loki with persistent queuing.
  *
  * Features:
- * - Automatic batching of logs for efficient transmission
- * - Configurable batch size and timeout
+ * - Persistent in-memory queue with configurable size limits
+ * - Exponential backoff retry mechanism with configurable limits
+ * - Automatic batching for efficient network utilization
  * - Label management with cardinality control
  * - Multi-tenancy support via X-Scope-OrgID
- * - Basic authentication support
+ * - Comprehensive error handling and recovery
  *
- * @example
- * // Basic configuration
+ * @implements {Transport}
+ *
+ * @example <caption>Basic Configuration</caption>
  * const lokiTransport = new LokiTransport({
  *   url: "http://localhost:3100",
  *   labels: { app: "my-app", env: "production" }
  * });
  *
- * @example
- * // With authentication and custom batching
- * const securedTransport = new LokiTransport({
+ * @example <caption>Advanced Configuration</caption>
+ * const transport = new LokiTransport({
  *   url: "http://loki.example.com",
+ *   batchSize: 50,
+ *   batchTimeout: 2000,
+ *   maxQueueSize: 50000,
+ *   maxRetries: 10,
+ *   retryBaseDelay: 2000,
+ *   tenantID: "team-a",
  *   basicAuth: { username: "user", password: "pass" },
- *   batchSize: 20,
- *   batchTimeout: 10000 // 10 seconds
+ *   debug: true
  * });
  */
 export declare class LokiTransport implements Transport {
 	private config;
-	private batch;
+	/** @private Internal log queue */
+	private queue;
+	/** @private Current batch size setting */
 	private batchSize;
+	/** @private Current batch timeout setting (ms) */
 	private batchTimeout;
+	/** @private Handle for batch timeout */
 	private timeoutHandle?;
+	/** @private Maximum allowed labels per entry */
 	private maxLabelCount;
+	/** @private Debug mode flag */
 	private debug;
+	/** @private Maximum queue size before dropping logs */
+	private maxQueueSize;
+	/** @private Current retry attempt count */
+	private retryCount;
+	/** @private Maximum allowed retry attempts */
+	private maxRetries;
+	/** @private Base delay for exponential backoff (ms) */
+	private retryBaseDelay;
+	/** @private Handle for retry timeout */
+	private retryTimer?;
+	/** @private Flag indicating active send operation */
+	private isSending;
 	/**
 	 * Creates a new LokiTransport instance
-	 * @param config Configuration options for Loki
-	 * @param config.url Required Loki server URL (e.g., "http://localhost:3100")
-	 * @param config.labels Base labels to attach to all log entries
-	 * @param config.basicAuth Basic authentication credentials
-	 * @param config.batchSize Maximum number of logs to batch before sending (default: 10)
-	 * @param config.batchTimeout Maximum time (ms) to wait before sending a batch (default: 5000)
-	 * @param config.tenantID Tenant ID for multi-tenant Loki setups
-	 * @param config.maxLabelCount Maximum number of labels allowed (default: 50)
-	 * @param config.debug Enable debug logging for transport errors (default: false)
-	 * @throws {Error} If URL is not provided
+	 * @param {LokiConfig} config - Configuration options
+	 * @param {string} config.url - Required Loki server endpoint (e.g., "http://localhost:3100")
+	 * @param {Object.<string, string>} [config.labels] - Base labels attached to all log entries
+	 * @param {Object} [config.basicAuth] - Basic authentication credentials
+	 * @param {string} config.basicAuth.username - Username for basic auth
+	 * @param {string} config.basicAuth.password - Password for basic auth
+	 * @param {string} [config.tenantID] - Tenant ID for multi-tenant Loki installations
+	 * @param {number} [config.batchSize=10] - Number of logs to accumulate before automatic sending
+	 * @param {number} [config.batchTimeout=5000] - Maximum time (ms) to wait before sending incomplete batch
+	 * @param {number} [config.maxLabelCount=50] - Maximum number of labels allowed per log entry
+	 * @param {number} [config.maxQueueSize=10000] - Maximum number of logs to buffer in memory during outages
+	 * @param {number} [config.maxRetries=5] - Maximum number of attempts to send a failed batch
+	 * @param {number} [config.retryBaseDelay=1000] - Initial retry delay in ms (exponential backoff base)
+	 * @param {boolean} [config.debug=false] - Enable debug logging for transport internals
 	 */
 	constructor(config: LokiConfig);
 	/**
-	 * Adds a log entry to the current batch. Automatically sends the batch when:
-	 * - The batch reaches the configured size, OR
-	 * - The batch timeout is reached
+	 * Queues a log entry for delivery to Loki
 	 *
-	 * @param entry The log entry to send. Metadata will be converted to Loki labels
-	 *              following the configured maxLabelCount rules.
+	 * @param {LogEntry} entry - The log entry to process
+	 * @param {string} entry.message - Primary log message content
+	 * @param {string} entry.level - Log severity level (e.g., "INFO", "ERROR")
+	 * @param {number} entry.timestamp - Unix timestamp in milliseconds
+	 * @param {Object} [entry.metadata] - Additional log metadata (will be converted to Loki labels)
 	 *
 	 * @example
 	 * transport.log({
-	 *   message: "User logged in",
-	 *   level: Levels.INFO,
+	 *   message: "User login successful",
+	 *   level: "INFO",
 	 *   timestamp: Date.now(),
-	 *   metadata: { userId: "123", device: "mobile" }
+	 *   metadata: {
+	 *     userId: "12345",
+	 *     sourceIP: "192.168.1.100",
+	 *     device: "mobile"
+	 *   }
 	 * });
 	 */
 	log(entry: LogEntry): void;
 	/**
-	 * Immediately sends the current batch of logs to Loki.
+	 * Schedules the next batch send operation
 	 * @private
+	 * @param {boolean} [immediate=false] - Whether to send immediately without waiting for timeout
+	 */
+	private scheduleSend;
+	/**
+	 * Sends the current batch to Loki with retry logic
+	 * @private
+	 * @async
+	 * @returns {Promise<void>}
 	 *
-	 * Handles:
-	 * - HTTP headers including auth and tenant ID
-	 * - Batch timeout clearing
-	 * - Error logging (when debug enabled)
-	 * - Batch management
-	 *
-	 * Note: This method is called automatically by the transport
-	 * and typically doesn't need to be called directly.
+	 * @description
+	 * Handles the complete send operation including:
+	 * - Preparing HTTP request with proper headers
+	 * - Executing the fetch request
+	 * - Managing retries with exponential backoff
+	 * - Queue cleanup on success/failure
+	 * - Automatic scheduling of next batch
 	 */
 	private sendBatch;
 }

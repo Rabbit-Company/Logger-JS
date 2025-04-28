@@ -219,40 +219,59 @@ function formatLokiMessage(entry, maxLabelCount, labels = {}) {
 // src/transports/lokiTransport.ts
 class LokiTransport {
   config;
-  batch = [];
+  queue = [];
   batchSize;
   batchTimeout;
   timeoutHandle;
   maxLabelCount;
   debug;
+  maxQueueSize;
+  retryCount = 0;
+  maxRetries;
+  retryBaseDelay;
+  retryTimer;
+  isSending = false;
   constructor(config) {
     this.config = config;
     this.batchSize = config.batchSize || 10;
     this.batchTimeout = config.batchTimeout || 5000;
     this.maxLabelCount = config.maxLabelCount || 50;
     this.debug = config.debug || false;
-    if (!config.url) {
-      throw new Error("Loki URL is required");
-    }
+    this.maxQueueSize = config.maxQueueSize || 1e4;
+    this.maxRetries = config.maxRetries || 5;
+    this.retryBaseDelay = config.retryBaseDelay || 1000;
   }
   log(entry) {
-    const lokiMessage = formatLokiMessage(entry, this.maxLabelCount, { ...this.config.labels, ...entry.metadata });
-    this.batch.push(lokiMessage);
-    if (this.batch.length >= this.batchSize) {
-      this.sendBatch();
-    } else if (!this.timeoutHandle) {
-      this.timeoutHandle = setTimeout(() => this.sendBatch(), this.batchTimeout);
+    const lokiMessage = formatLokiMessage(entry, this.maxLabelCount, {
+      ...this.config.labels,
+      ...entry.metadata
+    });
+    if (this.queue.length >= this.maxQueueSize) {
+      if (this.debug)
+        console.warn("Loki queue full - dropping oldest log entry");
+      this.queue.shift();
     }
+    this.queue.push(lokiMessage);
+    this.scheduleSend();
   }
-  async sendBatch() {
+  scheduleSend(immediate = false) {
+    if (this.isSending)
+      return;
     if (this.timeoutHandle) {
       clearTimeout(this.timeoutHandle);
       this.timeoutHandle = undefined;
     }
-    if (this.batch.length === 0)
+    if (this.queue.length > 0 && (immediate || this.queue.length >= this.batchSize)) {
+      this.sendBatch();
+    } else if (this.queue.length > 0) {
+      this.timeoutHandle = setTimeout(() => this.sendBatch(), this.batchTimeout);
+    }
+  }
+  async sendBatch() {
+    if (this.queue.length === 0 || this.isSending)
       return;
-    const batchToSend = this.batch;
-    this.batch = [];
+    this.isSending = true;
+    const batchToSend = this.queue.slice(0, this.batchSize);
     try {
       const headers = {
         "Content-Type": "application/json"
@@ -270,12 +289,38 @@ class LokiTransport {
           streams: batchToSend.flatMap((entry) => entry.streams)
         })
       });
-      if (!response.ok && this.debug) {
-        console.error("Failed to send logs to Loki: ", await response.text());
+      if (response.ok) {
+        this.queue = this.queue.slice(batchToSend.length);
+        this.retryCount = 0;
+        if (this.retryTimer) {
+          clearTimeout(this.retryTimer);
+          this.retryTimer = undefined;
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
       }
     } catch (error) {
       if (this.debug)
-        console.error("Error sending logs to Loki: ", error);
+        console.error("Loki transmission error: ", error);
+      this.retryCount++;
+      if (this.retryCount <= this.maxRetries) {
+        const delay = Math.min(this.retryBaseDelay * Math.pow(2, this.retryCount - 1), 30000);
+        if (this.debug)
+          console.log(`Scheduling retry #${this.retryCount} in ${delay}ms`);
+        this.retryTimer = setTimeout(() => {
+          this.scheduleSend(true);
+        }, delay);
+      } else {
+        if (this.debug)
+          console.warn(`Max retries (${this.maxRetries}) reached. Dropping batch.`);
+        this.queue = this.queue.slice(batchToSend.length);
+        this.retryCount = 0;
+      }
+    } finally {
+      this.isSending = false;
+      if (this.queue.length > 0 && this.retryCount === 0) {
+        this.scheduleSend();
+      }
     }
   }
 }
