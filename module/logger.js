@@ -1,3 +1,6 @@
+import { createRequire } from "node:module";
+var __require = /* @__PURE__ */ createRequire(import.meta.url);
+
 // src/constants/colors.ts
 var Colors;
 ((Colors2) => {
@@ -324,7 +327,245 @@ class LokiTransport {
     }
   }
 }
+// src/formatters/syslogFormatter.ts
+var SYSLOG_SEVERITY = {
+  [0 /* ERROR */]: 3,
+  [1 /* WARN */]: 4,
+  [2 /* AUDIT */]: 5,
+  [3 /* INFO */]: 6,
+  [4 /* HTTP */]: 6,
+  [5 /* DEBUG */]: 7,
+  [6 /* VERBOSE */]: 7,
+  [7 /* SILLY */]: 7
+};
+function formatRFC3164(entry, facility, appName, pid) {
+  const severity = SYSLOG_SEVERITY[entry.level];
+  const priority = facility << 3 | severity;
+  const timestamp = new Date(entry.timestamp).toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).replace(/,/, "").replace(" at ", " ");
+  const hostname = __require("os").hostname();
+  const msg = entry.metadata ? `${entry.message} ${JSON.stringify(entry.metadata)}` : entry.message;
+  return `<${priority}>${timestamp} ${hostname} ${appName}[${pid}]: ${msg}`;
+}
+function formatRFC5424(entry, facility, appName, pid) {
+  const severity = SYSLOG_SEVERITY[entry.level];
+  const priority = facility << 3 | severity;
+  const timestamp = new Date(entry.timestamp).toISOString();
+  const hostname = __require("os").hostname();
+  const msgId = "-";
+  const structuredData = entry.metadata ? `[example@1 ${Object.entries(entry.metadata).map(([key, val]) => `${key}="${val}"`).join(" ")}]` : "-";
+  return `<${priority}>1 ${timestamp} ${hostname} ${appName} ${pid} ${msgId} ${structuredData} ${entry.message}`;
+}
+function formatSyslogMessage(entry, config) {
+  const facility = config.facility ?? 1;
+  const appName = config.appName ?? "node";
+  const pid = config.pid ?? process.pid;
+  const protocolVersion = config.protocolVersion ?? 5424;
+  return protocolVersion === 3164 ? formatRFC3164(entry, facility, appName, pid) : formatRFC5424(entry, facility, appName, pid);
+}
+
+// src/transports/syslogTransport.ts
+import { createSocket, Socket } from "dgram";
+import { Socket as NetSocket } from "net";
+import { connect as tlsConnect } from "tls";
+
+class SyslogTransport {
+  socket = null;
+  queue = [];
+  isConnecting = false;
+  retryCount = 0;
+  retryBaseDelay;
+  maxQueueSize;
+  debug;
+  reconnectTimer = null;
+  config;
+  constructor(config = {}) {
+    this.maxQueueSize = config.maxQueueSize ?? 1000;
+    this.retryBaseDelay = config.retryBaseDelay ?? 1000;
+    this.debug = config.debug ?? false;
+    this.config = {
+      host: config.host ?? "localhost",
+      port: config.port ?? 514,
+      protocol: config.protocol ?? "udp",
+      facility: config.facility ?? 1,
+      appName: config.appName ?? "node",
+      pid: config.pid ?? process.pid,
+      protocolVersion: config.protocolVersion ?? 5424,
+      tlsOptions: config.tlsOptions || {}
+    };
+    this.initializeSocket();
+  }
+  initializeSocket() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      if (!("destroy" in this.socket)) {
+        this.socket.close();
+      } else {
+        this.socket.destroy();
+      }
+    }
+    if (this.config.protocol === "udp") {
+      this.initializeUdpSocket();
+    } else if (this.config.protocol === "tcp") {
+      this.initializeTcpSocket();
+    } else if (this.config.protocol === "tcp-tls") {
+      this.initializeTlsSocket();
+    }
+  }
+  initializeUdpSocket() {
+    this.socket = createSocket("udp4");
+    this.socket.on("error", (err) => {
+      if (this.debug)
+        console.error("Syslog UDP error:", err);
+      this.handleSocketError();
+    });
+    this.socket.on("close", () => {
+      if (this.debug)
+        console.log("Syslog UDP socket closed");
+    });
+  }
+  initializeTcpSocket() {
+    this.socket = new NetSocket;
+    this.setupTcpSocketEvents();
+    this.connectTcpSocket();
+  }
+  initializeTlsSocket() {
+    const tlsOptions = {
+      host: this.config.host,
+      port: this.config.port,
+      ...this.config.tlsOptions
+    };
+    this.socket = tlsConnect(tlsOptions, () => {
+      if (this.debug)
+        console.log("Syslog TLS connection established");
+      this.retryCount = 0;
+      this.flushQueue();
+    });
+    this.setupTcpSocketEvents();
+  }
+  setupTcpSocketEvents() {
+    if (!this.socket)
+      return;
+    this.socket.on("error", (err) => {
+      if (this.debug)
+        console.error("Syslog TCP/TLS error:", err);
+      this.handleSocketError();
+    });
+    this.socket.on("close", () => {
+      if (this.debug)
+        console.log("Syslog TCP/TLS connection closed");
+      this.handleSocketError();
+    });
+    this.socket.on("end", () => {
+      if (this.debug)
+        console.log("Syslog TCP/TLS connection ended");
+    });
+  }
+  connectTcpSocket() {
+    if (this.isConnecting || !(this.socket instanceof NetSocket))
+      return;
+    this.isConnecting = true;
+    this.socket.connect(this.config.port, this.config.host, () => {
+      if (this.debug)
+        console.log("Syslog TCP connection established");
+      this.isConnecting = false;
+      this.retryCount = 0;
+      this.flushQueue();
+    });
+  }
+  handleSocketError() {
+    if (this.reconnectTimer)
+      return;
+    this.socket = null;
+    this.isConnecting = false;
+    this.retryCount++;
+    const delay = Math.min(this.retryBaseDelay * Math.pow(2, this.retryCount - 1), 30000);
+    if (this.debug)
+      console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.retryCount})`);
+    this.reconnectTimer = setTimeout(() => {
+      this.initializeSocket();
+    }, delay);
+  }
+  flushQueue() {
+    if (!this.socket || this.queue.length === 0)
+      return;
+    while (this.queue.length > 0) {
+      const message = this.queue.shift();
+      if (message) {
+        this.sendMessage(message);
+      }
+    }
+  }
+  sendMessage(message) {
+    if (!this.socket) {
+      this.queue.unshift(message);
+      return;
+    }
+    try {
+      if (this.socket instanceof Socket) {
+        this.socket.send(message, this.config.port, this.config.host, (err) => {
+          if (err && this.debug)
+            console.error("Syslog UDP send error:", err);
+        });
+      } else {
+        this.socket.write(message + `
+`, (err) => {
+          if (err && this.debug)
+            console.error("Syslog TCP/TLS send error:", err);
+        });
+      }
+    } catch (err) {
+      if (this.debug)
+        console.error("Syslog send error:", err);
+      this.queue.unshift(message);
+    }
+  }
+  log(entry) {
+    const message = formatSyslogMessage(entry, this.config);
+    if (this.queue.length >= this.maxQueueSize) {
+      if (this.debug)
+        console.warn("Syslog queue full - dropping oldest message");
+      this.queue.shift();
+    }
+    this.queue.push(message);
+    if (this.socket && !this.isConnecting) {
+      this.flushQueue();
+    } else if (!this.socket && !this.isConnecting) {}
+  }
+  close() {
+    return new Promise((resolve) => {
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      if (!this.socket) {
+        resolve();
+        return;
+      }
+      const handleClose = () => {
+        resolve();
+      };
+      if ("destroy" in this.socket) {
+        this.socket.destroy();
+        process.nextTick(handleClose);
+      } else {
+        this.socket.close(handleClose);
+      }
+    });
+  }
+}
 export {
+  SyslogTransport,
   NDJsonTransport,
   LokiTransport,
   Logger,

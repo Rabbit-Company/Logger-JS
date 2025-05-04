@@ -323,6 +323,155 @@ export interface LokiStream {
 	];
 }
 /**
+ * Configuration options for Syslog transport
+ * @interface SyslogConfig
+ * @description Defines the configuration parameters for establishing a connection
+ * to a syslog server and customizing log message formatting.
+ *
+ * @example
+ * // Basic UDP configuration
+ * const config: SyslogConfig = {
+ *   host: 'logs.example.com',
+ *   port: 514,
+ *   protocol: 'udp'
+ * };
+ *
+ * @example
+ * // Secure TCP with TLS configuration
+ * const secureConfig: SyslogConfig = {
+ *   host: 'secure-logs.example.com',
+ *   port: 6514,
+ *   protocol: 'tcp-tls',
+ *   tlsOptions: {
+ *     ca: fs.readFileSync('ca.pem'),
+ *     cert: fs.readFileSync('client-cert.pem'),
+ *     key: fs.readFileSync('client-key.pem'),
+ *     rejectUnauthorized: true
+ *   },
+ *   appName: 'my-service',
+ *   facility: 16 // local0
+ * };
+ */
+export interface SyslogConfig {
+	/**
+	 * Syslog server hostname or IP address
+	 * @type {string}
+	 * @default 'localhost'
+	 * @example 'logs.example.com'
+	 * @example '192.168.1.100'
+	 */
+	host?: string;
+	/**
+	 * Syslog server port number
+	 * @type {number}
+	 * @default 514
+	 * @example 514 // Standard syslog port
+	 * @example 6514 // Common port for syslog over TLS
+	 */
+	port?: number;
+	/**
+	 * Network protocol to use for syslog transmission
+	 * @type {'udp' | 'tcp' | 'tcp-tls'}
+	 * @default 'udp'
+	 * @description
+	 * - 'udp': Unreliable but fast (RFC 3164 compatible)
+	 * - 'tcp': Reliable connection (RFC 6587)
+	 * - 'tcp-tls': Encrypted connection (RFC 5425)
+	 */
+	protocol?: "udp" | "tcp" | "tcp-tls";
+	/**
+	 * Syslog facility code
+	 * @type {number}
+	 * @range 0-23
+	 * @default 1 // USER
+	 * @description
+	 * Standard syslog facilities:
+	 * - 0: kern     - Kernel messages
+	 * - 1: user     - User-level messages
+	 * - 2: mail     - Mail system
+	 * - 3: daemon   - System daemons
+	 * - 4: auth     - Security/authentication
+	 * - 5: syslog   - Internal syslog messages
+	 * - 6: lpr      - Line printer subsystem
+	 * - 7: news     - Network news subsystem
+	 * - 8: uucp     - UUCP subsystem
+	 * - 9: cron     - Clock daemon
+	 * - 10: authpriv - Security/authentication
+	 * - 11: ftp      - FTP daemon
+	 * - 16-23: local0-local7 - Locally used facilities
+	 */
+	facility?: number;
+	/**
+	 * Application name identifier included in syslog messages
+	 * @type {string}
+	 * @default 'node'
+	 * @description
+	 * Should be a short string (typically <= 32 chars) identifying the application.
+	 * @example 'auth-service'
+	 * @example 'payment-processor'
+	 */
+	appName?: string;
+	/**
+	 * Process ID included in syslog messages
+	 * @type {number}
+	 * @default process.pid
+	 * @description
+	 * Used to identify the specific process generating the log message.
+	 */
+	pid?: number;
+	/**
+	 * Syslog protocol version specification
+	 * @type {3164 | 5424}
+	 * @default 5424
+	 * @description
+	 * - 3164: Traditional BSD syslog format (RFC 3164)
+	 * - 5424: Modern structured syslog format (RFC 5424)
+	 */
+	protocolVersion?: 3164 | 5424;
+	/**
+	 * TLS configuration options for secure connections
+	 * @type {Object}
+	 * @description Required when protocol is 'tcp-tls'
+	 * @property {string} [ca] - PEM encoded CA certificate
+	 * @property {string} [cert] - PEM encoded client certificate
+	 * @property {string} [key] - PEM encoded client private key
+	 * @property {boolean} [rejectUnauthorized=true] - Verify server certificate
+	 */
+	tlsOptions?: {
+		/** CA certificate */
+		ca?: string;
+		/** Client certificate */
+		cert?: string;
+		/** Client private key */
+		key?: string;
+		/** Whether to reject unauthorized certificates (default: true) */
+		rejectUnauthorized?: boolean;
+	};
+	/**
+	 * Maximum number of log messages to buffer in memory
+	 * @type {number}
+	 * @default 1000
+	 * @description
+	 * When the queue reaches this size, oldest messages will be dropped.
+	 * Set to 0 for unlimited (not recommended in production).
+	 */
+	maxQueueSize?: number;
+	/**
+	 * Initial retry delay in milliseconds (exponential backoff base)
+	 * @description Delay doubles with each retry up to maximum 30s
+	 * @default 1000
+	 */
+	retryBaseDelay?: number;
+	/**
+	 * Enable debug output for transport operations
+	 * @type {boolean}
+	 * @default false
+	 * @description
+	 * When true, outputs connection status and error details to console.
+	 */
+	debug?: boolean;
+}
+/**
  * Main Logger class that handles all logging functionality.
  *
  * Provides a structured logging interface with multiple severity levels and
@@ -754,6 +903,119 @@ export declare class LokiTransport implements Transport {
 	 * - Automatic scheduling of next batch
 	 */
 	private sendBatch;
+}
+/**
+ * Syslog transport implementation for the logger library
+ * @class SyslogTransport
+ * @implements {Transport}
+ * @description A robust syslog client that supports UDP, TCP, and TLS-encrypted TCP connections
+ * with automatic reconnection and message queuing capabilities.
+ *
+ * @example
+ * // Basic UDP configuration
+ * const transport = new SyslogTransport({
+ *   host: 'logs.example.com',
+ *   port: 514,
+ *   protocol: 'udp'
+ * });
+ *
+ * @example
+ * // Secure TLS configuration
+ * const secureTransport = new SyslogTransport({
+ *   host: 'secure-logs.example.com',
+ *   port: 6514,
+ *   protocol: 'tcp-tls',
+ *   tlsOptions: {
+ *     ca: fs.readFileSync('ca.pem'),
+ *     rejectUnauthorized: true
+ *   },
+ *   maxQueueSize: 5000
+ * });
+ */
+export declare class SyslogTransport implements Transport {
+	private socket;
+	private queue;
+	private isConnecting;
+	private retryCount;
+	private retryBaseDelay;
+	private maxQueueSize;
+	private debug;
+	private reconnectTimer;
+	private config;
+	/**
+	 * Creates a new SyslogTransport instance
+	 * @constructor
+	 * @param {SyslogConfig} [config={}] - Configuration options for the transport
+	 */
+	constructor(config?: SyslogConfig);
+	/**
+	 * Initializes the appropriate socket based on configured protocol
+	 * @private
+	 * @returns {void}
+	 */
+	private initializeSocket;
+	/**
+	 * Initializes a UDP socket for syslog transmission
+	 * @private
+	 * @returns {void}
+	 */
+	private initializeUdpSocket;
+	/**
+	 * Initializes a TCP socket for syslog transmission
+	 * @private
+	 * @returns {void}
+	 */
+	private initializeTcpSocket;
+	/**
+	 * Initializes a TLS-secured TCP socket for syslog transmission
+	 * @private
+	 * @returns {void}
+	 */
+	private initializeTlsSocket;
+	/**
+	 * Sets up common event handlers for TCP/TLS sockets
+	 * @private
+	 * @returns {void}
+	 */
+	private setupTcpSocketEvents;
+	/**
+	 * Establishes a TCP connection to the syslog server
+	 * @private
+	 * @returns {void}
+	 */
+	private connectTcpSocket;
+	/**
+	 * Handles socket errors and initiates reconnection if needed
+	 * @private
+	 * @returns {void}
+	 */
+	private handleSocketError;
+	/**
+	 * Sends all queued messages to the syslog server
+	 * @private
+	 * @returns {void}
+	 */
+	private flushQueue;
+	/**
+	 * Sends a single message to the syslog server
+	 * @private
+	 * @param {string} message - The formatted syslog message to send
+	 * @returns {void}
+	 */
+	private sendMessage;
+	/**
+	 * Processes a log entry by formatting and queueing it for transmission
+	 * @public
+	 * @param {LogEntry} entry - The log entry to process
+	 * @returns {void}
+	 */
+	log(entry: LogEntry): void;
+	/**
+	 * Gracefully closes the transport connection
+	 * @public
+	 * @returns {Promise<void>} A promise that resolves when the connection is closed
+	 */
+	close(): Promise<void>;
 }
 
 export {};

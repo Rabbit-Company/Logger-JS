@@ -10,10 +10,10 @@ A high-performance, multi-transport logging library for Node.js and browser envi
 
 - **Multi-level logging**: 8 severity levels from ERROR to SILLY
 - **Structured logging**: Attach rich metadata to log entries
-- **Multiple transports**: Console, NDJSON, and Grafana Loki
+- **Multiple transports**: Console, NDJSON, Grafana Loki and Syslog
 - **Advanced formatting**: Customizable console output with extensive datetime options
 - **Production-ready**: Batching, retries, and queue management for Loki
-- **Cross-platform**: Works in Node.js, Deno, Bun and modern browsers
+- **Cross-platform**: Works in Node.js, Deno and Bun
 - **Type-safe**: Full TypeScript definitions included
 
 ## Installation 📦
@@ -160,6 +160,37 @@ const lokiTransport = new LokiTransport({
 const logger = new Logger({
 	transports: [lokiTransport],
 });
+```
+
+### Syslog Transport
+
+```js
+import { SyslogTransport } from "@rabbit-company/logger";
+
+const syslogTransport = new SyslogTransport({
+	host: "syslog.example.com",
+	port: 514,
+	protocol: "udp", // 'udp', 'tcp', or 'tcp-tls'
+	facility: 16, // local0 facility
+	appName: "my-app",
+	protocolVersion: 5424, // 3164 (BSD) or 5424 (modern)
+	tlsOptions: {
+		ca: fs.readFileSync("ca.pem"),
+		rejectUnauthorized: true,
+	},
+	maxQueueSize: 2000, // Max queued messages during outages
+	debug: true, // Log connection status
+});
+
+const logger = new Logger({
+	transports: [syslogTransport],
+});
+
+// Features:
+// - Automatic reconnection with exponential backoff
+// - Message queuing during network issues
+// - Supports UDP, TCP, and TLS encryption
+// - Compliant with RFC 3164 and RFC 5424
 ```
 
 ## API Reference 📚
