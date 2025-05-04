@@ -95,7 +95,7 @@ function formatRFC5424(entry: LogEntry, facility: number, appName: string, pid: 
  * @param {number} [config.facility=1] - Syslog facility code (0-23), defaults to 1 (user-level)
  * @param {string} [config.appName="node"] - Application name identifier
  * @param {number} [config.pid=process.pid] - Process ID
- * @param {number} [config.protocolVersion=3164] - Syslog protocol version (3164 or 5424)
+ * @param {number} [config.protocolVersion=5424] - Syslog protocol version (3164 or 5424)
  * @returns {string} Formatted syslog message according to specified protocol
  *
  * @example
@@ -114,7 +114,7 @@ export function formatSyslogMessage(entry: LogEntry, config: Pick<SyslogConfig, 
 	const facility = config.facility ?? 1; // USER facility
 	const appName = config.appName ?? "node";
 	const pid = config.pid ?? process.pid;
-	const protocolVersion = config.protocolVersion ?? 3164;
+	const protocolVersion = config.protocolVersion ?? 5424;
 
 	return protocolVersion === 3164 ? formatRFC3164(entry, facility, appName, pid) : formatRFC5424(entry, facility, appName, pid);
 }

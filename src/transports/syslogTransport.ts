@@ -60,7 +60,7 @@ export class SyslogTransport implements Transport {
 			facility: config.facility ?? 1,
 			appName: config.appName ?? "node",
 			pid: config.pid ?? process.pid,
-			protocolVersion: config.protocolVersion ?? 3164,
+			protocolVersion: config.protocolVersion ?? 5424,
 			tlsOptions: config.tlsOptions || {},
 		};
 

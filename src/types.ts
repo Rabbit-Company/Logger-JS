@@ -330,7 +330,7 @@ export interface SyslogConfig {
 	/**
 	 * Syslog protocol version specification
 	 * @type {3164 | 5424}
-	 * @default 3164
+	 * @default 5424
 	 * @description
 	 * - 3164: Traditional BSD syslog format (RFC 3164)
 	 * - 5424: Modern structured syslog format (RFC 5424)
