@@ -6,3 +6,4 @@ export { Logger } from "./logger";
 export { ConsoleTransport } from "./transports/consoleTransport";
 export { NDJsonTransport } from "./transports/ndjsonTransport";
 export { LokiTransport } from "./transports/lokiTransport";
+export { SyslogTransport } from "./transports/syslogTransport";
