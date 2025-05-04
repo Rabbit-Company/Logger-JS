@@ -2,7 +2,7 @@
 	"name": "@rabbit-company/logger",
 	"version": "5.2.0",
 	"description": "A simple and lightweight logger",
-	"main": "./module/index.js",
+	"main": "./module/logger.js",
 	"type": "module",
 	"homepage": "https://github.com/Rabbit-Company/Logger-JS",
 	"funding": "https://rabbit-company.com/donation",
