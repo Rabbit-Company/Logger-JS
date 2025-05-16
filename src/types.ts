@@ -80,26 +80,30 @@ export interface Transport {
  * - `{type}`: Log level name (e.g., "INFO", "ERROR")
  * - `{message}`: The actual log message content
  *
+ * ## Metadata Placeholders
+ * - `{metadata}`: JSON-stringified metadata (if provided)
+ * - `{metadata-ml}`: Multi-line JSON-formatted metadata (if provided)
+ *
  * @property {Transport[]} [transports=[ConsoleTransport]] - Array of transports to use
  *
  * @example <caption>Default Format</caption>
  * {
- *   format: "[{datetime-local}] {type} {message}"
+ *   format: "[{datetime-local}] {type} {message} {metadata}"
  * }
  *
  * @example <caption>UTC Time Format</caption>
  * {
- *   format: "[{datetime} UTC] {type}: {message}"
+ *   format: "[{datetime} UTC] {type}: {message} {metadata}"
  * }
  *
  * @example <caption>Detailed Local Format</caption>
  * {
- *   format: "{date-local} {time-local} [{type}] {message}"
+ *   format: "{date-local} {time-local} [{type}] {message} {metadata}"
  * }
  *
  * @example <caption>Epoch Timestamp</caption>
  * {
- *   format: "{ms} - {type} - {message}"
+ *   format: "{ms} - {type} - {message} - {metadata}"
  * }
  */
 export interface LoggerConfig {
@@ -107,7 +111,7 @@ export interface LoggerConfig {
 	level?: Levels;
 	/** Enable colored output (default: true) */
 	colors?: boolean;
-	/** Format string using placeholders (default: "[{datetime-local}] {type} {message}") */
+	/** Format string using placeholders (default: "[{datetime-local}] {type} {message} {metadata}") */
 	format?: string;
 	/** Array of transports to use (default: [ConsoleTransport]) */
 	transports?: Transport[];

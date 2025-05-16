@@ -2,11 +2,15 @@ import { LevelColors, Levels } from "../constants/levels";
 import { Colors } from "../constants/colors";
 
 /**
- * Formats a log message for console output with optional colorization.
+ * Formats a log message for console output with optional colorization and metadata injection.
  * Supports comprehensive datetime formatting in both UTC and local timezones.
  *
- * @param {string} message - The log message content to be formatted
- * @param {Levels} logLevel - The severity level of the message (affects coloring)
+ * @param {string} message - The log message content to be formatted.
+ * @param {Levels} logLevel - The severity level of the message (affects coloring).
+ * @param {Record<string, any>=} metadata - Optional metadata object to embed in the output.
+ *   If provided, these placeholders become available:
+ *   - `{metadata}`: JSON-serialized metadata (single-line)
+ *   - `{metadata-ml}`: Pretty-printed metadata (multi-line, 2-space indented)
  * @param {string} format - The format string supporting these placeholders:
  *
  * ## Time/Date Placeholders
@@ -29,6 +33,10 @@ import { Colors } from "../constants/colors";
  * - `{type}`: Log level name (e.g., "INFO", "ERROR")
  * - `{message}`: The actual log message content
  *
+ * ## Metadata Placeholders
+ * - `{metadata}`: JSON-stringified metadata (if provided)
+ * - `{metadata-ml}`: Multi-line JSON-formatted metadata (if provided)
+ *
  * @param {boolean} colorsEnabled - When true:
  *   - Applies level-appropriate colors to output
  *   - Dates/times are dimmed for better readability
@@ -37,18 +45,28 @@ import { Colors } from "../constants/colors";
  * @returns {string} The fully formatted message ready for console output
  *
  * @example <caption>Basic usage with UTC time</caption>
- * formatConsoleMessage("System started", Levels.INFO,
- *   "[{datetime}] {type}: {message}", true);
+ * formatConsoleMessage("System started", Levels.INFO, undefined,
+ *   "[{datetime}] {type}: {message} {metadata}", true);
+ *
+ * @example <caption>Using metadata</caption>
+ * formatConsoleMessage("User login", Levels.INFO, { user: "alice" },
+ *   "[{datetime}] {type}: {message} {metadata}", true);
+ *
+ * @example <caption>Pretty metadata</caption>
+ * formatConsoleMessage("Request received", Levels.DEBUG, { id: 123, ip: "127.0.0.1" },
+ *   "{metadata-ml}", true);
  *
  * @example <caption>Comparing timezones</caption>
- * formatConsoleMessage("Timezone check", Levels.DEBUG,
+ * formatConsoleMessage("Timezone check", Levels.DEBUG, undefined,
  *   "UTC: {time} | Local: {time-local} | Epoch: {ms}", false);
- *
- * @example <caption>Local date formatting</caption>
- * formatConsoleMessage("Daily report", Levels.INFO,
- *   "Report for {date-local}: {message}", true);
  */
-export function formatConsoleMessage(message: string, logLevel: Levels, format: string, colorsEnabled: boolean): string {
+export function formatConsoleMessage(
+	message: string,
+	logLevel: Levels,
+	metadata: Record<string, any> | undefined,
+	format: string,
+	colorsEnabled: boolean
+): string {
 	const now = new Date();
 	const type = Levels[logLevel];
 
@@ -68,6 +86,22 @@ export function formatConsoleMessage(message: string, logLevel: Levels, format: 
 		"{full-local}": now.toString(),
 	};
 
+	const metadataFormats: Record<string, string> = {};
+	if (metadata) {
+		metadataFormats["{metadata}"] = JSON.stringify(metadata);
+		metadataFormats["{metadata-ml}"] = JSON.stringify(metadata, null, 2);
+
+		if (colorsEnabled) {
+			const color = LevelColors[logLevel];
+			const colorize = (text: string) => color + text + Colors.RESET;
+			for (const key in metadataFormats) {
+				metadataFormats[key] = colorize(metadataFormats[key]);
+			}
+		}
+	} else {
+		format = format.replace(/{metadata(-ml)?}/g, "");
+	}
+
 	let coloredType = type;
 	let coloredMessage = message;
 
@@ -75,19 +109,20 @@ export function formatConsoleMessage(message: string, logLevel: Levels, format: 
 		const color = LevelColors[logLevel];
 		const colorize = (text: string) => Colors.BRIGHT_BLACK + text + Colors.RESET;
 
-		Object.keys(utcFormats).forEach((key) => {
+		for (const key in utcFormats) {
 			utcFormats[key] = colorize(utcFormats[key]);
-		});
-		Object.keys(localFormats).forEach((key) => {
+		}
+
+		for (const key in localFormats) {
 			localFormats[key] = colorize(localFormats[key]);
-		});
+		}
 
 		coloredType = Colors.BOLD + color + type + Colors.RESET;
 		coloredMessage = color + message + Colors.RESET;
 	}
 
 	let output = format;
-	const allFormats = { ...utcFormats, ...localFormats };
+	const allFormats = { ...utcFormats, ...localFormats, ...metadataFormats };
 
 	for (const [placeholder, value] of Object.entries(allFormats)) {
 		output = output.replace(new RegExp(placeholder, "g"), value);

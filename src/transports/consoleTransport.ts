@@ -17,7 +17,7 @@ import type { LogEntry, Transport } from "../types";
  * @example
  * // Custom format with local timestamps
  * const transport = new ConsoleTransport(
- *   "[{datetime-local}] {type} - {message}",
+ *   "[{datetime-local}] {type} - {message} {metadata}",
  *   true
  * );
  */
@@ -40,7 +40,11 @@ export class ConsoleTransport implements Transport {
 	 * - `{type}`: Log level name (e.g., "INFO")
 	 * - `{message}`: The log message content
 	 *
-	 * @default "[{datetime-local}] {type} {message}"
+	 * ### Metadata Placeholders
+	 * - `{metadata}`: JSON-stringified metadata (if provided)
+	 * - `{metadata-ml}`: Multi-line JSON-formatted metadata (if provided)
+	 *
+	 * @default "[{datetime-local}] {type} {message} {metadata}"
 	 *
 	 * @param colors Enable ANSI color output. When disabled:
 	 *   - Improves performance in non-TTY environments
@@ -49,13 +53,13 @@ export class ConsoleTransport implements Transport {
 	 *
 	 * @example
 	 * // UTC format example
-	 * new ConsoleTransport("{date} {time} [{type}] {message}");
+	 * new ConsoleTransport("{date} {time} [{type}] {message} {metadata}");
 	 *
 	 * @example
 	 * // Local time with colors disabled
-	 * new ConsoleTransport("{time-local} - {message}", false);
+	 * new ConsoleTransport("{time-local} - {message} {metadata}", false);
 	 */
-	constructor(private format: string = "[{datetime-local}] {type} {message}", private colors: boolean = true) {}
+	constructor(private format: string = "[{datetime-local}] {type} {message} {metadata}", private colors: boolean = true) {}
 
 	/**
 	 * Formats and outputs a log entry to the console.
@@ -79,6 +83,6 @@ export class ConsoleTransport implements Transport {
 	 * });
 	 */
 	log(entry: LogEntry): void {
-		console.info(formatConsoleMessage(entry.message, entry.level, this.format, this.colors));
+		console.info(formatConsoleMessage(entry.message, entry.level, entry.metadata, this.format, this.colors));
 	}
 }

@@ -186,26 +186,30 @@ export interface Transport {
  * - `{type}`: Log level name (e.g., "INFO", "ERROR")
  * - `{message}`: The actual log message content
  *
+ * ## Metadata Placeholders
+ * - `{metadata}`: JSON-stringified metadata (if provided)
+ * - `{metadata-ml}`: Multi-line JSON-formatted metadata (if provided)
+ *
  * @property {Transport[]} [transports=[ConsoleTransport]] - Array of transports to use
  *
  * @example <caption>Default Format</caption>
  * {
- *   format: "[{datetime-local}] {type} {message}"
+ *   format: "[{datetime-local}] {type} {message} {metadata}"
  * }
  *
  * @example <caption>UTC Time Format</caption>
  * {
- *   format: "[{datetime} UTC] {type}: {message}"
+ *   format: "[{datetime} UTC] {type}: {message} {metadata}"
  * }
  *
  * @example <caption>Detailed Local Format</caption>
  * {
- *   format: "{date-local} {time-local} [{type}] {message}"
+ *   format: "{date-local} {time-local} [{type}] {message} {metadata}"
  * }
  *
  * @example <caption>Epoch Timestamp</caption>
  * {
- *   format: "{ms} - {type} - {message}"
+ *   format: "{ms} - {type} - {message} - {metadata}"
  * }
  */
 export interface LoggerConfig {
@@ -213,7 +217,7 @@ export interface LoggerConfig {
 	level?: Levels;
 	/** Enable colored output (default: true) */
 	colors?: boolean;
-	/** Format string using placeholders (default: "[{datetime-local}] {type} {message}") */
+	/** Format string using placeholders (default: "[{datetime-local}] {type} {message} {metadata}") */
 	format?: string;
 	/** Array of transports to use (default: [ConsoleTransport]) */
 	transports?: Transport[];
@@ -642,7 +646,7 @@ export declare class Logger {
  * @example
  * // Custom format with local timestamps
  * const transport = new ConsoleTransport(
- *   "[{datetime-local}] {type} - {message}",
+ *   "[{datetime-local}] {type} - {message} {metadata}",
  *   true
  * );
  */
@@ -667,7 +671,11 @@ export declare class ConsoleTransport implements Transport {
 	 * - `{type}`: Log level name (e.g., "INFO")
 	 * - `{message}`: The log message content
 	 *
-	 * @default "[{datetime-local}] {type} {message}"
+	 * ### Metadata Placeholders
+	 * - `{metadata}`: JSON-stringified metadata (if provided)
+	 * - `{metadata-ml}`: Multi-line JSON-formatted metadata (if provided)
+	 *
+	 * @default "[{datetime-local}] {type} {message} {metadata}"
 	 *
 	 * @param colors Enable ANSI color output. When disabled:
 	 *   - Improves performance in non-TTY environments
@@ -676,11 +684,11 @@ export declare class ConsoleTransport implements Transport {
 	 *
 	 * @example
 	 * // UTC format example
-	 * new ConsoleTransport("{date} {time} [{type}] {message}");
+	 * new ConsoleTransport("{date} {time} [{type}] {message} {metadata}");
 	 *
 	 * @example
 	 * // Local time with colors disabled
-	 * new ConsoleTransport("{time-local} - {message}", false);
+	 * new ConsoleTransport("{time-local} - {message} {metadata}", false);
 	 */
 	constructor(format?: string, colors?: boolean);
 	/**

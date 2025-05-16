@@ -47,7 +47,7 @@ var LevelColors = {
   [7 /* SILLY */]: "\x1B[90m" /* BRIGHT_BLACK */
 };
 // src/formatters/consoleFormatter.ts
-function formatConsoleMessage(message, logLevel, format, colorsEnabled) {
+function formatConsoleMessage(message, logLevel, metadata, format, colorsEnabled) {
   const now = new Date;
   const type = Levels[logLevel];
   const utcFormats = {
@@ -64,22 +64,36 @@ function formatConsoleMessage(message, logLevel, format, colorsEnabled) {
     "{date-local}": now.toLocaleDateString("sv-SE"),
     "{full-local}": now.toString()
   };
+  const metadataFormats = {};
+  if (metadata) {
+    metadataFormats["{metadata}"] = JSON.stringify(metadata);
+    metadataFormats["{metadata-ml}"] = JSON.stringify(metadata, null, 2);
+    if (colorsEnabled) {
+      const color = LevelColors[logLevel];
+      const colorize = (text) => color + text + "\x1B[0m" /* RESET */;
+      for (const key in metadataFormats) {
+        metadataFormats[key] = colorize(metadataFormats[key]);
+      }
+    }
+  } else {
+    format = format.replace(/{metadata(-ml)?}/g, "");
+  }
   let coloredType = type;
   let coloredMessage = message;
   if (colorsEnabled) {
     const color = LevelColors[logLevel];
     const colorize = (text) => "\x1B[90m" /* BRIGHT_BLACK */ + text + "\x1B[0m" /* RESET */;
-    Object.keys(utcFormats).forEach((key) => {
+    for (const key in utcFormats) {
       utcFormats[key] = colorize(utcFormats[key]);
-    });
-    Object.keys(localFormats).forEach((key) => {
+    }
+    for (const key in localFormats) {
       localFormats[key] = colorize(localFormats[key]);
-    });
+    }
     coloredType = "\x1B[1m" /* BOLD */ + color + type + "\x1B[0m" /* RESET */;
     coloredMessage = color + message + "\x1B[0m" /* RESET */;
   }
   let output = format;
-  const allFormats = { ...utcFormats, ...localFormats };
+  const allFormats = { ...utcFormats, ...localFormats, ...metadataFormats };
   for (const [placeholder, value] of Object.entries(allFormats)) {
     output = output.replace(new RegExp(placeholder, "g"), value);
   }
@@ -90,12 +104,12 @@ function formatConsoleMessage(message, logLevel, format, colorsEnabled) {
 class ConsoleTransport {
   format;
   colors;
-  constructor(format = "[{datetime-local}] {type} {message}", colors = true) {
+  constructor(format = "[{datetime-local}] {type} {message} {metadata}", colors = true) {
     this.format = format;
     this.colors = colors;
   }
   log(entry) {
-    console.info(formatConsoleMessage(entry.message, entry.level, this.format, this.colors));
+    console.info(formatConsoleMessage(entry.message, entry.level, entry.metadata, this.format, this.colors));
   }
 }
 

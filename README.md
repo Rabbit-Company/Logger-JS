@@ -96,13 +96,18 @@ The console transport supports extensive datetime formatting:
 - `{type}`: Log level (INFO, ERROR, etc.)
 - `{message}`: The log message
 
+#### Metadata Placeholders:
+
+- `{metadata}`: JSON-stringified metadata (if provided)
+- `{metadata-ml}`: Multi-line JSON-formatted metadata (if provided)
+
 ```js
 import { ConsoleTransport } from "@rabbit-company/logger";
 
 // Custom format examples
-new ConsoleTransport("[{datetime-local}] {type} {message}");
-new ConsoleTransport("{time} | {type} | {message}", false);
-new ConsoleTransport("EPOCH:{ms} {message}");
+new ConsoleTransport("[{datetime-local}] {type} {message} {metadata}");
+new ConsoleTransport("{time} | {type} | {message} | {metadata}", false);
+new ConsoleTransport("EPOCH:{ms} - {message} - {metadata}");
 ```
 
 ## Transports 🚚
@@ -115,7 +120,7 @@ import { ConsoleTransport } from "@rabbit-company/logger";
 const logger = new Logger({
 	transports: [
 		new ConsoleTransport(
-			"[{time-local}] {type} {message}", // Custom format
+			"[{time-local}] {type} {message} {metadata}", // Custom format
 			true // Enable colors
 		),
 	],
@@ -203,7 +208,7 @@ Full API documentation is available in the [TypeScript definitions](https://gith
 
 ```js
 new ConsoleTransport(
-	"{type} - {date} - {message}", // Custom format
+	"{type} - {date} - {message} - {metadata}", // Custom format
 	false // Disable colors
 );
 ```
