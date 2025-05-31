@@ -143,29 +143,32 @@ class Logger {
       transport.log(entry);
     }
   }
+  log(level, message, metadata) {
+    this.processEntry(this.createLogEntry(message, level, metadata));
+  }
   error(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 0 /* ERROR */, metadata));
+    this.log(0 /* ERROR */, message, metadata);
   }
   warn(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 1 /* WARN */, metadata));
+    this.log(1 /* WARN */, message, metadata);
   }
   audit(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 2 /* AUDIT */, metadata));
+    this.log(2 /* AUDIT */, message, metadata);
   }
   info(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 3 /* INFO */, metadata));
+    this.log(3 /* INFO */, message, metadata);
   }
   http(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 4 /* HTTP */, metadata));
+    this.log(4 /* HTTP */, message, metadata);
   }
   debug(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 5 /* DEBUG */, metadata));
+    this.log(5 /* DEBUG */, message, metadata);
   }
   verbose(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 6 /* VERBOSE */, metadata));
+    this.log(6 /* VERBOSE */, message, metadata);
   }
   silly(message, metadata) {
-    this.processEntry(this.createLogEntry(message, 7 /* SILLY */, metadata));
+    this.log(7 /* SILLY */, message, metadata);
   }
   addTransport(transport) {
     this.transports.push(transport);

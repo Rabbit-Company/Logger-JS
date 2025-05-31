@@ -49,6 +49,9 @@ logger.error("Database connection failed", {
 	db: "primary",
 });
 
+// Dynamic log levels
+logger.log(Levels.WARN, "High memory usage detected", { usage: "85%" });
+
 // Audit logging
 logger.audit("User login", {
 	userId: "usr_123",

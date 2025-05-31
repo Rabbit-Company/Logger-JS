@@ -529,6 +529,21 @@ export declare class Logger {
 	 */
 	private processEntry;
 	/**
+	 * Logs a message at the specified level with optional metadata.
+	 *
+	 * This is the primary logging method that all other level-specific methods
+	 * (error, warn, info, etc.) delegate to. It provides fine-grained control
+	 * over the log level and is useful for dynamic logging scenarios.
+	 *
+	 * @param level - The severity level for this log entry (use Levels enum)
+	 * @param message - The log message to record
+	 * @param metadata - Optional structured data to attach to the log entry
+	 *
+	 * @example
+	 * logger.log(Levels.ERROR, "Database connection failed", { error: error.stack });
+	 */
+	log(level: Levels, message: string, metadata?: Record<string, any>): void;
+	/**
 	 * Logs an error message (highest severity)
 	 * @param message The error message
 	 * @param metadata Optional metadata object

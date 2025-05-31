@@ -80,6 +80,24 @@ export class Logger {
 	}
 
 	/**
+	 * Logs a message at the specified level with optional metadata.
+	 *
+	 * This is the primary logging method that all other level-specific methods
+	 * (error, warn, info, etc.) delegate to. It provides fine-grained control
+	 * over the log level and is useful for dynamic logging scenarios.
+	 *
+	 * @param level - The severity level for this log entry (use Levels enum)
+	 * @param message - The log message to record
+	 * @param metadata - Optional structured data to attach to the log entry
+	 *
+	 * @example
+	 * logger.log(Levels.ERROR, "Database connection failed", { error: error.stack });
+	 */
+	log(level: Levels, message: string, metadata?: Record<string, any>): void {
+		this.processEntry(this.createLogEntry(message, level, metadata));
+	}
+
+	/**
 	 * Logs an error message (highest severity)
 	 * @param message The error message
 	 * @param metadata Optional metadata object
@@ -87,7 +105,7 @@ export class Logger {
 	 * logger.error("Database connection failed", { error: error.stack });
 	 */
 	error(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.ERROR, metadata));
+		this.log(Levels.ERROR, message, metadata);
 	}
 
 	/**
@@ -98,7 +116,7 @@ export class Logger {
 	 * logger.warn("High memory usage detected", { usage: "85%" });
 	 */
 	warn(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.WARN, metadata));
+		this.log(Levels.WARN, message, metadata);
 	}
 
 	/**
@@ -113,7 +131,7 @@ export class Logger {
 	 * });
 	 */
 	audit(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.AUDIT, metadata));
+		this.log(Levels.AUDIT, message, metadata);
 	}
 
 	/**
@@ -124,7 +142,7 @@ export class Logger {
 	 * logger.info("Server started", { port: 3000, env: "production" });
 	 */
 	info(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.INFO, metadata));
+		this.log(Levels.INFO, message, metadata);
 	}
 
 	/**
@@ -140,7 +158,7 @@ export class Logger {
 	 * });
 	 */
 	http(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.HTTP, metadata));
+		this.log(Levels.HTTP, message, metadata);
 	}
 
 	/**
@@ -154,7 +172,7 @@ export class Logger {
 	 * });
 	 */
 	debug(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.DEBUG, metadata));
+		this.log(Levels.DEBUG, message, metadata);
 	}
 
 	/**
@@ -168,7 +186,7 @@ export class Logger {
 	 * });
 	 */
 	verbose(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.VERBOSE, metadata));
+		this.log(Levels.VERBOSE, message, metadata);
 	}
 
 	/**
@@ -179,7 +197,7 @@ export class Logger {
 	 * logger.silly("Iteration complete", { iteration: 14563 });
 	 */
 	silly(message: string, metadata?: Record<string, any>): void {
-		this.processEntry(this.createLogEntry(message, Levels.SILLY, metadata));
+		this.log(Levels.SILLY, message, metadata);
 	}
 
 	/**
