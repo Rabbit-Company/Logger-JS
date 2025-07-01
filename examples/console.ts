@@ -20,3 +20,19 @@ setInterval(() => {
 setInterval(() => {
 	logger.audit("Invalid password!", { username: "ziga.zajc007", ip: "192.168.0.1" });
 }, 2000);
+
+setInterval(() => {
+	try {
+		throw new Error("Failed parsing provided JSON");
+	} catch (err: any) {
+		logger.error("Unknown error", err);
+	}
+}, 4000);
+
+setInterval(() => {
+	try {
+		throw new Error("Failed parsing provided TOML");
+	} catch (err: any) {
+		logger.error("Unknown error", { code: 42, error: err });
+	}
+}, 5000);

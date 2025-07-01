@@ -58,6 +58,43 @@ export class Logger {
 	 * @returns Complete LogEntry object
 	 */
 	private createLogEntry(message: string, level: Levels, metadata?: Record<string, any>): LogEntry {
+		if (metadata instanceof Error) {
+			return {
+				message,
+				level,
+				timestamp: Date.now(),
+				metadata: {
+					error: {
+						name: metadata.name,
+						message: metadata.message,
+						stack: metadata.stack,
+					},
+				},
+			};
+		}
+
+		// Handle case where metadata contains Error objects
+		if (metadata && typeof metadata === "object") {
+			const processedMetadata: Record<string, any> = {};
+			for (const [key, value] of Object.entries(metadata)) {
+				if (value instanceof Error) {
+					processedMetadata[key] = {
+						name: value.name,
+						message: value.message,
+						stack: value.stack,
+					};
+				} else {
+					processedMetadata[key] = value;
+				}
+			}
+			return {
+				message,
+				level,
+				timestamp: Date.now(),
+				metadata: processedMetadata,
+			};
+		}
+
 		return {
 			message,
 			level,

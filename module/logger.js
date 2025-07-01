@@ -129,6 +129,40 @@ class Logger {
     return this.level >= level;
   }
   createLogEntry(message, level, metadata) {
+    if (metadata instanceof Error) {
+      return {
+        message,
+        level,
+        timestamp: Date.now(),
+        metadata: {
+          error: {
+            name: metadata.name,
+            message: metadata.message,
+            stack: metadata.stack
+          }
+        }
+      };
+    }
+    if (metadata && typeof metadata === "object") {
+      const processedMetadata = {};
+      for (const [key, value] of Object.entries(metadata)) {
+        if (value instanceof Error) {
+          processedMetadata[key] = {
+            name: value.name,
+            message: value.message,
+            stack: value.stack
+          };
+        } else {
+          processedMetadata[key] = value;
+        }
+      }
+      return {
+        message,
+        level,
+        timestamp: Date.now(),
+        metadata: processedMetadata
+      };
+    }
     return {
       message,
       level,
