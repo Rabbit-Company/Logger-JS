@@ -1,6 +1,6 @@
 {
 	"name": "@rabbit-company/logger",
-	"version": "5.6.0",
+	"version": "5.6.1",
 	"exports": "./src/index.ts",
 	"publish": {
 		"include": ["LICENSE", "README.md", "src/"]

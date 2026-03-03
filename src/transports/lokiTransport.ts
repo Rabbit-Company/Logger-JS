@@ -141,15 +141,17 @@ export class LokiTransport implements Transport {
 	private scheduleSend(immediate = false): void {
 		if (this.isSending) return;
 
-		if (this.timeoutHandle) {
-			clearTimeout(this.timeoutHandle);
-			this.timeoutHandle = undefined;
-		}
-
-		if (this.queue.length > 0 && (immediate || this.queue.length >= this.batchSize)) {
+		if (immediate || this.queue.length >= this.batchSize) {
+			if (this.timeoutHandle) {
+				clearTimeout(this.timeoutHandle);
+				this.timeoutHandle = undefined;
+			}
 			this.sendBatch();
-		} else if (this.queue.length > 0) {
-			this.timeoutHandle = setTimeout(() => this.sendBatch(), this.batchTimeout);
+		} else if (this.queue.length > 0 && !this.timeoutHandle) {
+			this.timeoutHandle = setTimeout(() => {
+				this.timeoutHandle = undefined;
+				this.sendBatch();
+			}, this.batchTimeout);
 		}
 	}
 
@@ -169,6 +171,11 @@ export class LokiTransport implements Transport {
 	 */
 	private async sendBatch(): Promise<void> {
 		if (this.queue.length === 0 || this.isSending) return;
+
+		if (this.timeoutHandle) {
+			clearTimeout(this.timeoutHandle);
+			this.timeoutHandle = undefined;
+		}
 
 		this.isSending = true;
 		const batchToSend = this.queue.slice(0, this.batchSize);
